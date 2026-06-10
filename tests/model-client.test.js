@@ -29,7 +29,7 @@ test('openai-compatible errors include provider response body', async () => {
   }
 });
 
-test('openai-compatible requests omit temperature by default', async () => {
+test('openai-compatible requests disable storage and omit temperature by default', async () => {
   const previousFetch = globalThis.fetch;
   let requestBody = null;
   globalThis.fetch = async (url, options) => {
@@ -51,6 +51,7 @@ test('openai-compatible requests omit temperature by default', async () => {
     });
 
     assert.equal(result.text, 'ok');
+    assert.equal(requestBody.store, false);
     assert.equal(Object.hasOwn(requestBody, 'temperature'), false);
   } finally {
     globalThis.fetch = previousFetch;

@@ -13,6 +13,7 @@ export async function generateWithModel({ provider = 'local', prompt, apiKey, ba
       },
       body: JSON.stringify({
         model: model || 'gpt-4.1-mini',
+        store: false,
         messages: [
           { role: 'system', content: prompt.system },
           { role: 'user', content: prompt.user }
