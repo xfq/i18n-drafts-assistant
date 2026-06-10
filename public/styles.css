@@ -1,18 +1,26 @@
 :root {
   color-scheme: light;
-  --bg: #f7f9fc;
-  --surface: #ffffff;
-  --surface-muted: #f1f5f9;
-  --text: #172033;
-  --muted: #5f6b7a;
-  --border: #d8e0ea;
-  --accent: #005a9c;
-  --accent-dark: #004378;
-  --warning-bg: #fff6d6;
-  --warning-border: #d7a600;
-  --error-bg: #fff0f0;
-  --error-border: #c93d3d;
-  --success-bg: #eef8f1;
+  --bg: oklch(97.5% 0.012 252);
+  --surface: oklch(99.1% 0.004 252);
+  --surface-raised: oklch(99.7% 0.003 252);
+  --surface-muted: oklch(95.2% 0.015 252);
+  --text: oklch(24% 0.035 258);
+  --muted: oklch(48% 0.028 256);
+  --border: oklch(86.5% 0.019 252);
+  --field-border: oklch(78.5% 0.026 252);
+  --accent: oklch(43.5% 0.135 251);
+  --accent-dark: oklch(34% 0.13 251);
+  --accent-soft: oklch(94.8% 0.038 249);
+  --warning-bg: oklch(96.8% 0.064 91);
+  --warning-border: oklch(68% 0.14 82);
+  --warning-text: oklch(36% 0.075 82);
+  --error-bg: oklch(96.6% 0.03 24);
+  --error-border: oklch(55% 0.17 25);
+  --error-text: oklch(38% 0.12 25);
+  --success-bg: oklch(95.8% 0.042 148);
+  --success-text: oklch(38% 0.09 148);
+  --code-bg: oklch(22% 0.033 260);
+  --code-text: oklch(95% 0.01 248);
   --shadow: 0 12px 30px rgb(24 45 70 / 0.08);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -94,11 +102,13 @@ pre:focus-visible {
   display: grid;
   gap: 1rem;
   align-content: start;
+  min-inline-size: 0;
 }
 
 .query-panel,
 .answer-panel,
 .source-panel {
+  min-inline-size: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -123,11 +133,12 @@ legend {
 textarea,
 select {
   inline-size: 100%;
+  min-inline-size: 0;
   min-block-size: 48px;
-  border: 1px solid #b9c4d0;
+  border: 1px solid var(--field-border);
   border-radius: 6px;
   padding: 0.75rem;
-  background: #fff;
+  background: var(--surface-raised);
   color: var(--text);
 }
 
@@ -186,6 +197,7 @@ input[type="checkbox"] {
 
 button {
   min-block-size: 44px;
+  min-inline-size: 0;
   border: 1px solid transparent;
   border-radius: 6px;
   padding: 0.7rem 1rem;
@@ -195,7 +207,7 @@ button {
 
 button[type="submit"] {
   background: var(--accent);
-  color: #fff;
+  color: oklch(98% 0.006 252);
 }
 
 button[type="submit"]:hover {
@@ -203,7 +215,7 @@ button[type="submit"]:hover {
 }
 
 button[type="button"] {
-  background: #fff;
+  background: var(--surface-raised);
   border-color: var(--border);
   color: var(--accent);
 }
@@ -229,16 +241,16 @@ button:disabled {
 .message-area.error {
   border-color: var(--error-border);
   background: var(--error-bg);
-  color: #7a1c1c;
+  color: var(--error-text);
 }
 
 .message-area.loading {
   background: var(--success-bg);
-  color: #1f5d35;
+  color: var(--success-text);
 }
 
 .answer-panel {
-  padding: 1rem;
+  padding: 1.15rem 1.25rem 1.25rem;
 }
 
 .answer-panel h2,
@@ -246,6 +258,7 @@ button:disabled {
   margin: 0;
   font-size: 1.05rem;
   line-height: 1.2;
+  text-wrap: balance;
 }
 
 .warnings {
@@ -259,18 +272,124 @@ button:disabled {
   border-radius: 6px;
   padding: 0.75rem;
   background: var(--warning-bg);
-  color: #5e4300;
+  color: var(--warning-text);
   font-weight: 650;
 }
 
 .answer-text {
-  line-height: 1.65;
-  max-inline-size: 72ch;
+  max-inline-size: 76ch;
+  margin-block-start: 0.9rem;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.68;
+  overflow-wrap: break-word;
 }
 
 .answer-text:empty::before {
   content: "No answer yet.";
   color: var(--muted);
+}
+
+.answer-text > * {
+  margin: 0;
+}
+
+.answer-text > * + * {
+  margin-block-start: 0.85rem;
+}
+
+.answer-text :where(h1, h2, h3, h4, h5, h6) {
+  color: oklch(20% 0.04 258);
+  font-weight: 780;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.answer-text h1 {
+  font-size: 1.45rem;
+}
+
+.answer-text h2 {
+  font-size: 1.25rem;
+}
+
+.answer-text h3 {
+  font-size: 1.08rem;
+}
+
+.answer-text :where(p, li, blockquote) {
+  text-wrap: pretty;
+}
+
+.answer-text :where(ul, ol) {
+  padding-inline-start: 1.35rem;
+}
+
+.answer-text li + li {
+  margin-block-start: 0.35rem;
+}
+
+.answer-text a {
+  color: var(--accent);
+  font-weight: 680;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+}
+
+.answer-text blockquote {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.8rem 0.95rem;
+  background: var(--surface-muted);
+  color: oklch(34% 0.03 258);
+}
+
+.answer-text :not(pre) > code {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.08rem 0.28rem;
+  background: var(--surface-muted);
+  font-size: 0.92em;
+}
+
+.answer-text pre {
+  overflow: auto;
+  border: 1px solid oklch(31% 0.04 260);
+  border-radius: 6px;
+  padding: 0.95rem;
+  background: var(--code-bg);
+  color: var(--code-text);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.answer-text pre code {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.answer-text .citation-ref {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 1.45rem;
+  min-block-size: 1.45rem;
+  border: 1px solid color-mix(in oklab, var(--accent) 25%, var(--border));
+  border-radius: 999px;
+  padding-inline: 0.35rem;
+  background: var(--accent-soft);
+  font-size: 0.78em;
+  font-weight: 780;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: 0.08em;
+}
+
+.answer-text .citation-ref:hover {
+  border-color: var(--accent);
 }
 
 .citation-list {
@@ -284,7 +403,18 @@ button:disabled {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.875rem;
-  background: #fff;
+  background: var(--surface-raised);
+  scroll-margin-block-start: 1rem;
+}
+
+.citation a,
+.source-card a {
+  overflow-wrap: anywhere;
+}
+
+.citation:target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .citation h3,
@@ -380,15 +510,15 @@ button:disabled {
   max-block-size: 22rem;
   border-radius: 6px;
   padding: 0.75rem;
-  background: #0e1628;
-  color: #edf3ff;
+  background: var(--code-bg);
+  color: var(--code-text);
   font-size: 0.78rem;
   line-height: 1.5;
 }
 
 @media (max-width: 980px) {
   .app-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .source-panel {
@@ -397,7 +527,7 @@ button:disabled {
   }
 
   .control-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -409,6 +539,15 @@ button:disabled {
 
   .app-shell {
     padding: 0.75rem;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .actions button {
+    inline-size: 100%;
   }
 
   fieldset label {

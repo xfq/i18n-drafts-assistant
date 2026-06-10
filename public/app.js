@@ -1,28 +1,30 @@
-const form = document.querySelector('#ask-form');
-const submitButton = document.querySelector('#submit-button');
-const retrieveButton = document.querySelector('#retrieve-button');
-const messageArea = document.querySelector('#message-area');
-const warningsEl = document.querySelector('#warnings');
-const answerEl = document.querySelector('#answer');
-const citationsEl = document.querySelector('#citations');
-const sourcesEl = document.querySelector('#sources');
-const sourceCountEl = document.querySelector('#source-count');
-const debugDetails = document.querySelector('#debug-details');
-const debugOutput = document.querySelector('#debug-output');
-const healthStatus = document.querySelector('#health-status');
+const form = typeof document === 'undefined' ? null : document.querySelector('#ask-form');
+const submitButton = typeof document === 'undefined' ? null : document.querySelector('#submit-button');
+const retrieveButton = typeof document === 'undefined' ? null : document.querySelector('#retrieve-button');
+const messageArea = typeof document === 'undefined' ? null : document.querySelector('#message-area');
+const warningsEl = typeof document === 'undefined' ? null : document.querySelector('#warnings');
+const answerEl = typeof document === 'undefined' ? null : document.querySelector('#answer');
+const citationsEl = typeof document === 'undefined' ? null : document.querySelector('#citations');
+const sourcesEl = typeof document === 'undefined' ? null : document.querySelector('#sources');
+const sourceCountEl = typeof document === 'undefined' ? null : document.querySelector('#source-count');
+const debugDetails = typeof document === 'undefined' ? null : document.querySelector('#debug-details');
+const debugOutput = typeof document === 'undefined' ? null : document.querySelector('#debug-output');
+const healthStatus = typeof document === 'undefined' ? null : document.querySelector('#health-status');
 
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  if (!form.reportValidity()) return;
-  await ask();
-});
+if (form && retrieveButton) {
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+    await ask();
+  });
 
-retrieveButton.addEventListener('click', async () => {
-  if (!form.reportValidity()) return;
-  await inspectRetrieval();
-});
+  retrieveButton.addEventListener('click', async () => {
+    if (!form.reportValidity()) return;
+    await inspectRetrieval();
+  });
 
-loadHealth();
+  loadHealth();
+}
 
 async function loadHealth() {
   try {
@@ -98,7 +100,7 @@ function formPayload() {
 
 function renderAnswer(response) {
   warningsEl.replaceChildren(...(response.warnings || []).map(renderWarning));
-  answerEl.textContent = response.answer || '';
+  renderMarkdownInto(answerEl, response.answer || '');
   citationsEl.replaceChildren(...(response.citations || []).map(renderCitation));
 }
 
@@ -112,6 +114,7 @@ function renderWarning(warning) {
 function renderCitation(citation, index) {
   const card = document.createElement('article');
   card.className = 'citation';
+  card.id = `citation-${index + 1}`;
 
   const heading = document.createElement('h3');
   heading.textContent = `[${index + 1}] ${citation.label}`;
@@ -241,4 +244,139 @@ async function fetchJson(url, options) {
     throw new Error(data.error || `Request failed with HTTP ${response.status}`);
   }
   return data;
+}
+
+export function renderMarkdownInto(element, markdown) {
+  const template = document.createElement('template');
+  template.innerHTML = markdownToHtml(markdown);
+  element.replaceChildren(template.content.cloneNode(true));
+}
+
+export function markdownToHtml(markdown) {
+  const lines = String(markdown || '').replace(/\r\n?/g, '\n').split('\n');
+  const blocks = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    if (!lines[index].trim()) {
+      index += 1;
+      continue;
+    }
+
+    const fence = lines[index].match(/^```([A-Za-z0-9_-]+)?\s*$/);
+    if (fence) {
+      const language = fence[1] ? ` class="language-${escapeAttribute(fence[1])}"` : '';
+      const codeLines = [];
+      index += 1;
+      while (index < lines.length && !/^```\s*$/.test(lines[index])) {
+        codeLines.push(lines[index]);
+        index += 1;
+      }
+      if (index < lines.length) index += 1;
+      blocks.push(`<pre><code${language}>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+      continue;
+    }
+
+    const heading = lines[index].match(/^(#{1,6})\s+(.+)$/);
+    if (heading) {
+      const level = heading[1].length;
+      blocks.push(`<h${level}>${renderInline(heading[2].trim())}</h${level}>`);
+      index += 1;
+      continue;
+    }
+
+    if (/^\s*[-*+]\s+/.test(lines[index])) {
+      const items = [];
+      while (index < lines.length && /^\s*[-*+]\s+/.test(lines[index])) {
+        items.push(`<li>${renderInline(lines[index].replace(/^\s*[-*+]\s+/, '').trim())}</li>`);
+        index += 1;
+      }
+      blocks.push(`<ul>${items.join('')}</ul>`);
+      continue;
+    }
+
+    if (/^\s*\d+[.)]\s+/.test(lines[index])) {
+      const items = [];
+      while (index < lines.length && /^\s*\d+[.)]\s+/.test(lines[index])) {
+        items.push(`<li>${renderInline(lines[index].replace(/^\s*\d+[.)]\s+/, '').trim())}</li>`);
+        index += 1;
+      }
+      blocks.push(`<ol>${items.join('')}</ol>`);
+      continue;
+    }
+
+    if (/^\s*>\s?/.test(lines[index])) {
+      const quoteLines = [];
+      while (index < lines.length && /^\s*>\s?/.test(lines[index])) {
+        quoteLines.push(lines[index].replace(/^\s*>\s?/, '').trim());
+        index += 1;
+      }
+      blocks.push(`<blockquote>${renderParagraphs(quoteLines)}</blockquote>`);
+      continue;
+    }
+
+    const paragraphLines = [];
+    while (index < lines.length && lines[index].trim() && !isBlockStart(lines[index])) {
+      paragraphLines.push(lines[index].trim());
+      index += 1;
+    }
+    blocks.push(`<p>${renderInline(paragraphLines.join(' '))}</p>`);
+  }
+
+  return blocks.join('');
+}
+
+function renderParagraphs(lines) {
+  return lines
+    .join('\n')
+    .split(/\n{2,}/)
+    .map((paragraph) => `<p>${renderInline(paragraph.replace(/\n/g, ' ').trim())}</p>`)
+    .join('');
+}
+
+function isBlockStart(line) {
+  return /^```/.test(line) ||
+    /^(#{1,6})\s+/.test(line) ||
+    /^\s*[-*+]\s+/.test(line) ||
+    /^\s*\d+[.)]\s+/.test(line) ||
+    /^\s*>\s?/.test(line);
+}
+
+function renderInline(text) {
+  const codeTokens = [];
+  const textWithTokens = String(text).replace(/`([^`]*)`/g, (_, code) => {
+    const token = `\u0000CODE${codeTokens.length}\u0000`;
+    codeTokens.push(`<code>${escapeHtml(code)}</code>`);
+    return token;
+  });
+
+  return renderInlineText(textWithTokens).replace(/\u0000CODE(\d+)\u0000/g, (_, tokenIndex) => {
+    return codeTokens[Number(tokenIndex)] || '';
+  });
+}
+
+function renderInlineText(text) {
+  return escapeHtml(text)
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|mailto:[^)\s]+)\)/g, (_, label, href) => {
+      return `<a href="${escapeAttribute(href)}" rel="noreferrer">${label}</a>`;
+    })
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/_([^_]+)_/g, '<em>$1</em>')
+    .replace(/\[([1-9]\d*)\]/g, (_, number) => {
+      return `<a href="#citation-${number}" class="citation-ref" aria-label="Citation ${number}">[${number}]</a>`;
+    });
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/'/g, '&#39;');
 }
