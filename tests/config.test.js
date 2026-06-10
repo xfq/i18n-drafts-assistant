@@ -13,7 +13,8 @@ const touchedKeys = [
   'ENABLE_DEBUG',
   'MODEL_PROVIDER',
   'MODEL_API_KEY',
-  'MODEL_TIMEOUT_MS'
+  'MODEL_TIMEOUT_MS',
+  'TRUSTED_PROXIES'
 ];
 
 test('getConfig loads values from a .env file', async () => {
@@ -26,7 +27,8 @@ test('getConfig loads values from a .env file', async () => {
     'ENABLE_DEBUG=true',
     'MODEL_PROVIDER=openai-compatible',
     'MODEL_API_KEY=server-side-secret',
-    'MODEL_TIMEOUT_MS=12345'
+    'MODEL_TIMEOUT_MS=12345',
+    'TRUSTED_PROXIES=127.0.0.1/32, ::1'
   ].join('\n'));
 
   await withCleanEnv(async () => {
@@ -40,6 +42,7 @@ test('getConfig loads values from a .env file', async () => {
     assert.equal(config.modelProvider, 'openai-compatible');
     assert.equal(config.modelApiKey, 'server-side-secret');
     assert.equal(config.modelTimeoutMs, 12345);
+    assert.deepEqual(config.trustedProxies, ['127.0.0.1/32', '::1']);
   });
 });
 

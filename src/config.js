@@ -26,7 +26,8 @@ export function getConfig(overrides = {}) {
     enableDebug: parseBoolean(overrides.enableDebug ?? env.ENABLE_DEBUG ?? false),
     adminToken: firstDefined(overrides.adminToken, env.ADMIN_TOKEN, ''),
     rateLimitWindowMs: Number(firstDefined(overrides.rateLimitWindowMs, env.RATE_LIMIT_WINDOW_MS, 60_000)),
-    rateLimitMax: Number(firstDefined(overrides.rateLimitMax, env.RATE_LIMIT_MAX, 30))
+    rateLimitMax: Number(firstDefined(overrides.rateLimitMax, env.RATE_LIMIT_MAX, 30)),
+    trustedProxies: parseList(firstDefined(overrides.trustedProxies, env.TRUSTED_PROXIES, ''))
   };
 
   return config;
@@ -100,4 +101,12 @@ function firstDefined(...values) {
 function parseBoolean(value) {
   if (typeof value === 'boolean') return value;
   return ['1', 'true', 'yes', 'on'].includes(String(value).toLowerCase());
+}
+
+function parseList(value) {
+  if (Array.isArray(value)) return value.flatMap(parseList);
+  return String(value || '')
+    .split(/[,\s]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }

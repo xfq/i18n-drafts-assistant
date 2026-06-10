@@ -7,11 +7,14 @@ import { loadIndex, appendQueryLog } from './db/store.js';
 import { retrieve } from './retrieval/hybrid.js';
 import { answerFromRetrieval } from './generation/answer.js';
 import { runIndexer } from './indexing/indexer.js';
+import { createRateLimiter } from './rate-limit.js';
 
 const PUBLIC_DIR = new URL('../public/', import.meta.url).pathname;
 
 export function createServer({ index = null, config = getConfig() } = {}) {
-  const rateLimiter = createRateLimiter(config.rateLimitWindowMs, config.rateLimitMax);
+  const rateLimiter = createRateLimiter(config.rateLimitWindowMs, config.rateLimitMax, {
+    trustedProxies: config.trustedProxies
+  });
 
   return http.createServer(async (request, response) => {
     try {
@@ -185,28 +188,6 @@ function mimeType(path) {
     '.css': 'text/css; charset=utf-8',
     '.js': 'text/javascript; charset=utf-8'
   }[extname(path)] || 'application/octet-stream';
-}
-
-function createRateLimiter(windowMs, maxRequests) {
-  const buckets = new Map();
-
-  return (request, response) => {
-    const now = Date.now();
-    const key = request.socket.remoteAddress || 'unknown';
-    const bucket = buckets.get(key) || { count: 0, resetAt: now + windowMs };
-    if (now > bucket.resetAt) {
-      bucket.count = 0;
-      bucket.resetAt = now + windowMs;
-    }
-    bucket.count += 1;
-    buckets.set(key, bucket);
-
-    if (bucket.count > maxRequests) {
-      sendJson(response, 429, { evidence_status: 'error', error: 'Rate limit exceeded.' });
-      return false;
-    }
-    return true;
-  };
 }
 
 const currentFile = fileURLToPath(import.meta.url);
