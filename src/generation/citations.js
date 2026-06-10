@@ -23,7 +23,7 @@ export function validateCitationsForEvidence(response) {
     (!Array.isArray(response.citations) || response.citations.length === 0)) {
     return {
       ...response,
-      answer: 'I could not find enough support for that in the indexed W3C i18n content.',
+      answer: 'I could not find enough support for that in the indexed sources.',
       citations: [],
       warnings: response.warnings || [],
       evidence_status: 'insufficient_evidence'

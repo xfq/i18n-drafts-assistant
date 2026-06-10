@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { answerFromRetrieval } from '../src/generation/answer.js';
 import { validateCitationsForEvidence } from '../src/generation/citations.js';
+import { buildPrompt } from '../src/generation/prompt.js';
 
 const reviewChunk = {
   chunk_id: 'questions/qa-link-lang.en.html#link-language',
@@ -46,6 +47,27 @@ test('supported answers include citations and draft/review warnings', async () =
   assert.equal(response.citations[0].status, 'review');
   assert(response.warnings.some((warning) => warning.type === 'uses_draft_or_review'));
   assert(response.debug.final_context.includes('hreflang'));
+});
+
+test('answer instructions avoid naming the site corpus as the speaker', async () => {
+  const prompt = buildPrompt({
+    question: 'How should I declare UTF-8 character encoding in HTML?',
+    language: 'en',
+    chunks: [publishedChunk]
+  });
+
+  assert.match(prompt.system, /Do not introduce answers by naming W3C i18n content or sources as the speaker/i);
+
+  const response = await answerFromRetrieval({
+    question: 'How should I declare UTF-8 character encoding in HTML?',
+    language: 'en',
+    retrieval: { results: [publishedChunk] },
+    modelProvider: 'local'
+  });
+
+  assert.doesNotMatch(response.answer, /From the indexed W3C i18n content/i);
+  assert.doesNotMatch(response.answer, /W3C i18n (?:content|sources) (?:says|say|could)/i);
+  assert.match(response.answer, /UTF-8.*\[1\]/i);
 });
 
 test('mostly draft or review evidence uses stronger warning', async () => {

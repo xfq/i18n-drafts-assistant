@@ -6,7 +6,8 @@ export function buildPrompt({ question, language, chunks }) {
     'Cite every substantive claim with bracketed citation numbers.',
     'Prefer published sources when available.',
     'Clearly label draft or review-stage material as provisional.',
-    'If evidence is insufficient, say that support was not found in indexed W3C i18n content.',
+    'Do not introduce answers by naming W3C i18n content or sources as the speaker; answer directly.',
+    'If evidence is insufficient, say that support was not found in the indexed sources.',
     'Do not use generic web advice outside the provided context.'
   ].join(' ');
 

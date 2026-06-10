@@ -2,7 +2,7 @@ import { buildCitations, validateCitationsForEvidence } from './citations.js';
 import { buildPrompt } from './prompt.js';
 import { generateWithModel } from './model-client.js';
 
-const INSUFFICIENT = 'I could not find enough support for that in the indexed W3C i18n content.';
+const INSUFFICIENT = 'I could not find enough support for that in the indexed sources.';
 
 export async function answerFromRetrieval({
   question,
@@ -103,23 +103,23 @@ export function buildWarnings(citations, selectedLanguage) {
 function localExtractiveAnswer(chunks, citations) {
   const sentences = chunks.slice(0, citations.length).map((chunk, index) => {
     const sentence = firstUsefulSentence(chunk.text);
-    const prefix = ['review', 'draft'].includes(chunk.status) ? `${statusLabel(chunk.status)} material says ` : '';
+    const prefix = ['review', 'draft'].includes(chunk.status) ? `${statusLabel(chunk.status)}: ` : '';
     return `${prefix}${sentence} [${index + 1}]`;
   });
 
-  return `From the indexed W3C i18n content: ${sentences.join(' ')}`;
+  return sentences.join(' ');
 }
 
 function localConflictAnswer(chunks, citations) {
   const publishedIndex = citations.findIndex((citation) => citation.status === 'published');
   const provisionalIndex = citations.findIndex((citation) => ['review', 'draft'].includes(citation.status));
-  const parts = ['The retrieved W3C i18n sources could not confirm a direct conflict from the indexed content.'];
+  const parts = ['The retrieved sources could not confirm a direct conflict.'];
 
   if (publishedIndex >= 0) {
-    parts.push(`Published material says ${firstUsefulSentence(chunks[publishedIndex].text)} [${publishedIndex + 1}]`);
+    parts.push(`Published: ${firstUsefulSentence(chunks[publishedIndex].text)} [${publishedIndex + 1}]`);
   }
   if (provisionalIndex >= 0) {
-    parts.push(`${statusLabel(citations[provisionalIndex].status)} material says ${firstUsefulSentence(chunks[provisionalIndex].text)} [${provisionalIndex + 1}] Treat draft/review material as provisional until it is published.`);
+    parts.push(`${statusLabel(citations[provisionalIndex].status)}: ${firstUsefulSentence(chunks[provisionalIndex].text)} [${provisionalIndex + 1}] Treat draft/review material as provisional until it is published.`);
   }
 
   return parts.join(' ');
