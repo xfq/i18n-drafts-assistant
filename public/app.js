@@ -1,19 +1,36 @@
 const form = typeof document === 'undefined' ? null : document.querySelector('#ask-form');
+const questionField = form?.elements.namedItem('question') || null;
 const submitButton = typeof document === 'undefined' ? null : document.querySelector('#submit-button');
 const messageArea = typeof document === 'undefined' ? null : document.querySelector('#message-area');
 const warningsEl = typeof document === 'undefined' ? null : document.querySelector('#warnings');
 const answerEl = typeof document === 'undefined' ? null : document.querySelector('#answer');
 const citationsEl = typeof document === 'undefined' ? null : document.querySelector('#citations');
 const healthStatus = typeof document === 'undefined' ? null : document.querySelector('#health-status');
+const submitLabel = submitButton?.textContent || 'Ask from sources';
 
 if (form) {
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (!form.reportValidity()) return;
+    validateQuestion();
+    if (!form.reportValidity()) {
+      setMessage(questionField.validationMessage, 'error');
+      questionField.focus();
+      return;
+    }
     await ask();
   });
 
+  questionField.addEventListener('input', () => {
+    questionField.setCustomValidity('');
+    if (messageArea.classList.contains('error')) setMessage('', '');
+  });
+
   loadHealth();
+}
+
+function validateQuestion() {
+  const question = questionField.value.trim();
+  questionField.setCustomValidity(question.length >= 3 ? '' : 'Enter at least 3 characters.');
 }
 
 async function loadHealth() {
@@ -29,7 +46,10 @@ async function loadHealth() {
 
 async function ask() {
   setLoading('Retrieving W3C i18n sources and composing a cited answer...');
+  form.setAttribute('aria-busy', 'true');
+  answerEl.setAttribute('aria-busy', 'true');
   submitButton.disabled = true;
+  submitButton.textContent = 'Asking...';
 
   try {
     const payload = formPayload();
@@ -45,6 +65,9 @@ async function ask() {
     setMessage(error.message, 'error');
   } finally {
     submitButton.disabled = false;
+    submitButton.textContent = submitLabel;
+    form.setAttribute('aria-busy', 'false');
+    answerEl.setAttribute('aria-busy', 'false');
   }
 }
 
@@ -60,19 +83,23 @@ function formPayload() {
 
 function renderAnswer(response) {
   warningsEl.replaceChildren(...(response.warnings || []).map(renderWarning));
-  renderMarkdownInto(answerEl, response.answer || '');
+  renderMarkdownInto(answerEl, response.answer || 'No answer could be generated from the selected sources.');
   citationsEl.replaceChildren(...(response.citations || []).map(renderCitation));
 }
 
 function renderWarning(warning) {
   const element = document.createElement('div');
   element.className = 'warning';
-  element.textContent = warning.message;
+  const label = document.createElement('strong');
+  label.textContent = 'Warning';
+  const message = document.createElement('span');
+  message.textContent = warning.message;
+  element.append(label, message);
   return element;
 }
 
 function renderCitation(citation, index) {
-  const card = document.createElement('article');
+  const card = document.createElement('li');
   card.className = 'citation';
   card.id = `citation-${index + 1}`;
 
@@ -84,12 +111,13 @@ function renderCitation(citation, index) {
   meta.append(
     badge(statusLabel(citation.status), citation.status),
     badge(translationLabel(citation.translation_state), citation.translation_state),
-    textNode(citation.language)
+    languageNode(citation.language)
   );
 
   const link = document.createElement('a');
   link.href = citation.url;
   link.rel = 'noreferrer';
+  link.setAttribute('aria-label', `Open source: ${citation.label}`);
   link.textContent = citation.url;
 
   card.append(heading, meta, link);
@@ -103,8 +131,11 @@ function badge(label, className = '') {
   return element;
 }
 
-function textNode(value) {
-  return document.createTextNode(value ? `${value} ` : '');
+function languageNode(value) {
+  const element = document.createElement('span');
+  element.className = 'source-language';
+  element.textContent = value ? `Language: ${value}` : 'Language unknown';
+  return element;
 }
 
 function statusLabel(status) {
@@ -133,6 +164,7 @@ function setLoading(message) {
 
 function setMessage(message, className) {
   messageArea.className = `message-area ${className || ''}`.trim();
+  messageArea.setAttribute('role', className === 'error' ? 'alert' : 'status');
   messageArea.textContent = message;
 }
 

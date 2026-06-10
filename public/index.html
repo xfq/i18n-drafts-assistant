@@ -8,21 +8,24 @@
   <script type="module" src="/app.js"></script>
 </head>
 <body>
+  <a class="skip-link" href="#content">Skip to content</a>
   <header class="app-header">
-    <div>
-      <h1>Ask W3C i18n</h1>
-      <p id="health-status" class="status-line" aria-live="polite">Checking index status...</p>
+    <div class="app-header__inner">
+      <div>
+        <h1>Ask W3C i18n</h1>
+        <p id="health-status" class="status-line" aria-live="polite">Checking index status...</p>
+      </div>
+      <a class="header-link" href="https://www.w3.org/International/" rel="noreferrer">W3C Internationalization</a>
     </div>
-    <a class="header-link" href="https://www.w3.org/International/" rel="noreferrer">W3C Internationalization</a>
   </header>
 
-  <main class="app-shell">
-    <section class="workspace" aria-labelledby="ask-heading">
-      <search class="query-panel">
+  <main id="content" class="app-shell" tabindex="-1">
+    <section class="workspace">
+      <search class="query-panel" aria-label="Ask W3C Internationalization sources">
         <form id="ask-form" action="/api/ask" method="post">
           <div class="field">
             <label for="question">Question</label>
-            <textarea id="question" name="question" rows="5" minlength="3" required enterkeyhint="send">How should I declare UTF-8 character encoding in HTML?</textarea>
+            <textarea id="question" name="question" rows="5" minlength="3" required enterkeyhint="send" aria-describedby="question-help">How should I declare UTF-8 character encoding in HTML?</textarea>
             <p id="question-help" class="hint">Answers are grounded only in indexed W3C Internationalization sources.</p>
           </div>
 
@@ -43,14 +46,18 @@
 
             <fieldset class="status-filters">
               <legend>Source status</legend>
-              <label><input type="checkbox" name="statuses" value="published" checked> Published</label>
-              <label><input type="checkbox" name="statuses" value="review" checked> Review</label>
-              <label><input type="checkbox" name="statuses" value="draft" checked> Draft</label>
+              <div class="choice-group">
+                <label><input type="checkbox" name="statuses" value="published" checked> Published</label>
+                <label><input type="checkbox" name="statuses" value="review" checked> Review</label>
+                <label><input type="checkbox" name="statuses" value="draft" checked> Draft</label>
+              </div>
             </fieldset>
 
             <fieldset class="obsolete-filter">
               <legend>Advanced</legend>
-              <label><input type="checkbox" id="include-obsolete" name="includeObsolete"> Include obsolete content</label>
+              <div class="choice-group">
+                <label><input type="checkbox" id="include-obsolete" name="includeObsolete"> Include obsolete content</label>
+              </div>
             </fieldset>
           </div>
 
@@ -60,15 +67,18 @@
         </form>
       </search>
 
-      <section id="message-area" class="message-area empty" aria-live="polite">
-        <p>Ask a question to see a cited answer.</p>
-      </section>
+      <section id="message-area" class="message-area" aria-live="polite" aria-atomic="true"></section>
 
       <section class="answer-panel" aria-labelledby="answer-heading">
-        <h2 id="answer-heading">Answer</h2>
+        <div class="answer-panel__header">
+          <h2 id="answer-heading">Answer</h2>
+          <!-- <span class="answer-contract">Cited sources required</span> -->
+        </div>
         <div id="warnings" class="warnings" aria-live="polite"></div>
-        <div id="answer" class="answer-text"></div>
-        <div id="citations" class="citation-list"></div>
+        <div id="answer" class="answer-text" aria-busy="false">
+          <p class="answer-placeholder">Ask a question to see an answer with source citations.</p>
+        </div>
+        <ol id="citations" class="citation-list" role="list" aria-label="Cited sources"></ol>
       </section>
     </section>
   </main>
