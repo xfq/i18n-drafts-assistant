@@ -1,26 +1,16 @@
 const form = typeof document === 'undefined' ? null : document.querySelector('#ask-form');
 const submitButton = typeof document === 'undefined' ? null : document.querySelector('#submit-button');
-const retrieveButton = typeof document === 'undefined' ? null : document.querySelector('#retrieve-button');
 const messageArea = typeof document === 'undefined' ? null : document.querySelector('#message-area');
 const warningsEl = typeof document === 'undefined' ? null : document.querySelector('#warnings');
 const answerEl = typeof document === 'undefined' ? null : document.querySelector('#answer');
 const citationsEl = typeof document === 'undefined' ? null : document.querySelector('#citations');
-const sourcesEl = typeof document === 'undefined' ? null : document.querySelector('#sources');
-const sourceCountEl = typeof document === 'undefined' ? null : document.querySelector('#source-count');
-const debugDetails = typeof document === 'undefined' ? null : document.querySelector('#debug-details');
-const debugOutput = typeof document === 'undefined' ? null : document.querySelector('#debug-output');
 const healthStatus = typeof document === 'undefined' ? null : document.querySelector('#health-status');
 
-if (form && retrieveButton) {
+if (form) {
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!form.reportValidity()) return;
     await ask();
-  });
-
-  retrieveButton.addEventListener('click', async () => {
-    if (!form.reportValidity()) return;
-    await inspectRetrieval();
   });
 
   loadHealth();
@@ -50,41 +40,11 @@ async function ask() {
     });
 
     renderAnswer(response);
-    renderSources(response.debug?.retrieved_after_ranking || []);
-    renderDebug(response.debug);
     setMessage(response.evidence_status === 'insufficient_evidence' ? 'No supported answer was found.' : '', '');
   } catch (error) {
     setMessage(error.message, 'error');
   } finally {
     submitButton.disabled = false;
-  }
-}
-
-async function inspectRetrieval() {
-  setLoading('Retrieving matching source chunks...');
-  retrieveButton.disabled = true;
-
-  try {
-    const payload = formPayload();
-    const response = await fetchJson('/api/retrieve', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        query: payload.question,
-        language: payload.language,
-        statuses: payload.statuses,
-        includeObsolete: payload.includeObsolete,
-        limit: 10
-      })
-    });
-
-    renderSources(response.results || response.debug?.retrieved_after_ranking || []);
-    renderDebug(response.debug || response);
-    setMessage('Retrieved source chunks are shown in the source panel.', '');
-  } catch (error) {
-    setMessage(error.message, 'error');
-  } finally {
-    retrieveButton.disabled = false;
   }
 }
 
@@ -136,62 +96,6 @@ function renderCitation(citation, index) {
   return card;
 }
 
-function renderSources(results) {
-  sourceCountEl.textContent = String(results.length);
-  if (!results.length) {
-    const empty = document.createElement('p');
-    empty.className = 'panel-empty';
-    empty.textContent = 'No retrieved sources.';
-    sourcesEl.replaceChildren(empty);
-    return;
-  }
-
-  sourcesEl.replaceChildren(...results.map((result) => {
-    const card = document.createElement('article');
-    card.className = 'source-card';
-
-    const heading = document.createElement('h3');
-    heading.textContent = result.title;
-
-    const section = document.createElement('p');
-    section.className = 'meta-row';
-    section.textContent = (result.heading_path || []).join(' > ') || result.source_path;
-
-    const meta = document.createElement('div');
-    meta.className = 'meta-row';
-    meta.append(
-      badge(statusLabel(result.status), result.status),
-      badge(translationLabel(result.translation_state), result.translation_state),
-      textNode(result.language),
-      textNode(result.rank ? `Rank ${result.rank}` : ''),
-      textNode(Number.isFinite(result.score) ? `Score ${result.score}` : '')
-    );
-
-    const preview = document.createElement('p');
-    preview.className = 'preview';
-    preview.textContent = truncate(result.text, 260);
-
-    const link = document.createElement('a');
-    link.href = result.section_url;
-    link.rel = 'noreferrer';
-    link.textContent = result.section_url;
-
-    card.append(heading, section, meta, preview, link);
-    return card;
-  }));
-}
-
-function renderDebug(debug) {
-  if (!debug) {
-    debugDetails.hidden = true;
-    debugOutput.textContent = '';
-    return;
-  }
-
-  debugDetails.hidden = false;
-  debugOutput.textContent = JSON.stringify(debug, null, 2);
-}
-
 function badge(label, className = '') {
   const element = document.createElement('span');
   element.className = `badge ${className || ''}`.trim();
@@ -221,11 +125,6 @@ function translationLabel(state) {
     unlinked: 'Unlinked translation',
     unknown: 'Translation state unknown'
   }[state] || state || 'Translation state unknown';
-}
-
-function truncate(value, maxLength) {
-  const text = String(value || '').replace(/\s+/g, ' ').trim();
-  return text.length > maxLength ? `${text.slice(0, maxLength - 1)}...` : text;
 }
 
 function setLoading(message) {

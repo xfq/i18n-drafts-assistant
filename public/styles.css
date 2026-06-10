@@ -89,16 +89,12 @@ pre:focus-visible {
 }
 
 .app-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(22rem, 31rem);
-  gap: 1rem;
-  inline-size: min(100%, 1480px);
+  inline-size: min(100%, 1040px);
   margin-inline: auto;
   padding: 1rem;
 }
 
-.workspace,
-.source-panel {
+.workspace {
   display: grid;
   gap: 1rem;
   align-content: start;
@@ -106,8 +102,7 @@ pre:focus-visible {
 }
 
 .query-panel,
-.answer-panel,
-.source-panel {
+.answer-panel {
   min-inline-size: 0;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -253,8 +248,7 @@ button:disabled {
   padding: 1.15rem 1.25rem 1.25rem;
 }
 
-.answer-panel h2,
-.source-header h2 {
+.answer-panel h2 {
   margin: 0;
   font-size: 1.05rem;
   line-height: 1.2;
@@ -398,8 +392,7 @@ button:disabled {
   margin-block-start: 1rem;
 }
 
-.citation,
-.source-card {
+.citation {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.875rem;
@@ -407,8 +400,7 @@ button:disabled {
   scroll-margin-block-start: 1rem;
 }
 
-.citation a,
-.source-card a {
+.citation a {
   overflow-wrap: anywhere;
 }
 
@@ -417,8 +409,7 @@ button:disabled {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
-.citation h3,
-.source-card h3 {
+.citation h3 {
   margin: 0;
   font-size: 0.98rem;
   line-height: 1.3;
@@ -461,71 +452,7 @@ button:disabled {
   background: var(--success-bg);
 }
 
-.source-panel {
-  position: sticky;
-  top: 1rem;
-  max-block-size: calc(100dvh - 2rem);
-  overflow: auto;
-  padding: 1rem;
-}
-
-.source-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
-.source-count {
-  border-radius: 999px;
-  padding: 0.2rem 0.55rem;
-  background: var(--surface-muted);
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 750;
-}
-
-.sources {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.panel-empty {
-  color: var(--muted);
-}
-
-.preview {
-  color: var(--text);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.debug-panel {
-  border-block-start: 1px solid var(--border);
-  padding-block-start: 0.75rem;
-}
-
-.debug-panel pre {
-  overflow: auto;
-  max-block-size: 22rem;
-  border-radius: 6px;
-  padding: 0.75rem;
-  background: var(--code-bg);
-  color: var(--code-text);
-  font-size: 0.78rem;
-  line-height: 1.5;
-}
-
 @media (max-width: 980px) {
-  .app-shell {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .source-panel {
-    position: static;
-    max-block-size: none;
-  }
-
   .control-grid {
     grid-template-columns: minmax(0, 1fr);
   }

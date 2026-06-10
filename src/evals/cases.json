@@ -199,7 +199,7 @@
     "disallowed_source_paths": [],
     "expected_evidence_status": "supported",
     "expected_warning_types": [],
-    "notes": "Requires citations and source panel."
+    "notes": "Requires citations in the answer panel."
   },
   {
     "category": "citation enforcement",

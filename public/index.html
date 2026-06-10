@@ -56,13 +56,12 @@
 
           <div class="actions">
             <button id="submit-button" type="submit">Ask from sources</button>
-            <button id="retrieve-button" type="button">Inspect retrieval</button>
           </div>
         </form>
       </search>
 
       <section id="message-area" class="message-area empty" aria-live="polite">
-        <p>Ask a question to see a cited answer. Retrieved source chunks will appear in the source panel.</p>
+        <p>Ask a question to see a cited answer.</p>
       </section>
 
       <section class="answer-panel" aria-labelledby="answer-heading">
@@ -72,20 +71,6 @@
         <div id="citations" class="citation-list"></div>
       </section>
     </section>
-
-    <aside class="source-panel" aria-labelledby="sources-heading">
-      <div class="source-header">
-        <h2 id="sources-heading">Sources</h2>
-        <span id="source-count" class="source-count">0</span>
-      </div>
-      <div id="sources" class="sources">
-        <p class="panel-empty">No retrieved sources yet.</p>
-      </div>
-      <details id="debug-details" class="debug-panel" hidden>
-        <summary>Debug payload</summary>
-        <pre id="debug-output" tabindex="0"></pre>
-      </details>
-    </aside>
   </main>
 </body>
 </html>
