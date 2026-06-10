@@ -96,3 +96,65 @@ test('HTTP API preserves expected API error status codes', async () => {
     app.close();
   }
 });
+
+test('HTTP API ask returns when the model provider times out', async () => {
+  const index = await buildIndex({
+    sourceRoot: fixtureRoot,
+    publicBaseUrl: 'https://www.w3.org/International',
+    sourceMode: 'local',
+    sourceRef: 'fixture',
+    sourceCommit: 'fixture-sha',
+    write: false
+  });
+  const app = createServer({
+    index,
+    config: {
+      enableDebug: true,
+      modelProvider: 'openai-compatible',
+      modelApiKey: 'test-key',
+      modelBaseUrl: 'https://model.test/v1',
+      modelTimeoutMs: 5,
+      generationModel: 'gpt-5.5',
+      publicBaseUrl: 'https://www.w3.org/International',
+      sourceMode: 'local',
+      sourceRef: 'fixture',
+      sourceRepoUrl: '',
+      sourceCommit: 'fixture-sha',
+      rateLimitWindowMs: 60_000,
+      rateLimitMax: 20
+    }
+  });
+  app.listen(0, '127.0.0.1');
+  await once(app, 'listening');
+  const { port } = app.address();
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    if (String(url).startsWith(`http://127.0.0.1:${port}`)) {
+      return previousFetch(url, options);
+    }
+
+    const signal = options.signal;
+    assert(signal, 'Expected provider fetch to receive an AbortSignal');
+    return new Promise((_resolve, reject) => {
+      signal.addEventListener('abort', () => {
+        reject(signal.reason || new DOMException('The operation was aborted.', 'AbortError'));
+      }, { once: true });
+    });
+  };
+
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/api/ask`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question: 'How should I declare UTF-8 character encoding?', language: 'en' })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 502);
+    assert.equal(body.evidence_status, 'error');
+    assert.match(body.error, /Model provider request timed out after 5ms/);
+  } finally {
+    globalThis.fetch = previousFetch;
+    app.close();
+  }
+});

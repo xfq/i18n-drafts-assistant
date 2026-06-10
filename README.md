@@ -56,6 +56,7 @@ MODEL_PROVIDER=openai-compatible
 MODEL_API_KEY=...
 MODEL_BASE_URL=https://api.openai.com/v1
 GENERATION_MODEL=...
+MODEL_TIMEOUT_MS=30000
 ```
 
 API keys are read only by the Node server and are never sent to the browser.

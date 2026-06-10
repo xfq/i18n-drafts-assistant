@@ -12,7 +12,8 @@ export async function answerFromRetrieval({
   modelProvider = 'local',
   modelApiKey = '',
   modelBaseUrl = '',
-  generationModel = ''
+  generationModel = '',
+  modelTimeoutMs = 30_000
 }) {
   const results = retrieval?.results || [];
   const selectedChunks = results.slice(0, 4);
@@ -45,7 +46,8 @@ export async function answerFromRetrieval({
         prompt,
         apiKey: modelApiKey,
         baseUrl: modelBaseUrl,
-        model: generationModel
+        model: generationModel,
+        timeoutMs: modelTimeoutMs
       });
       answer = generated.text || localExtractiveAnswer(selectedChunks, citations);
     }

@@ -79,7 +79,8 @@ async function handleApi({ request, response, url, index, config }) {
       modelProvider: config.modelProvider,
       modelApiKey: config.modelApiKey,
       modelBaseUrl: config.modelBaseUrl,
-      generationModel: config.generationModel
+      generationModel: config.generationModel,
+      modelTimeoutMs: config.modelTimeoutMs
     });
 
     appendQueryLog({

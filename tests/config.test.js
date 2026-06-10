@@ -12,7 +12,8 @@ const touchedKeys = [
   'SOURCE_REF',
   'ENABLE_DEBUG',
   'MODEL_PROVIDER',
-  'MODEL_API_KEY'
+  'MODEL_API_KEY',
+  'MODEL_TIMEOUT_MS'
 ];
 
 test('getConfig loads values from a .env file', async () => {
@@ -24,7 +25,8 @@ test('getConfig loads values from a .env file', async () => {
     'export SOURCE_REF=fixture-ref',
     'ENABLE_DEBUG=true',
     'MODEL_PROVIDER=openai-compatible',
-    'MODEL_API_KEY=server-side-secret'
+    'MODEL_API_KEY=server-side-secret',
+    'MODEL_TIMEOUT_MS=12345'
   ].join('\n'));
 
   await withCleanEnv(async () => {
@@ -37,6 +39,7 @@ test('getConfig loads values from a .env file', async () => {
     assert.equal(config.enableDebug, true);
     assert.equal(config.modelProvider, 'openai-compatible');
     assert.equal(config.modelApiKey, 'server-side-secret');
+    assert.equal(config.modelTimeoutMs, 12345);
   });
 });
 
