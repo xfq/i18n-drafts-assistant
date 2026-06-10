@@ -12,6 +12,6 @@
     "eval": "node src/evals/run.js"
   },
   "engines": {
-    "node": ">=24"
+    "node": "24.x"
   }
 }
