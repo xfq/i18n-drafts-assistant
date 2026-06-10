@@ -1,0 +1,96 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { answerFromRetrieval } from '../src/generation/answer.js';
+import { validateCitationsForEvidence } from '../src/generation/citations.js';
+
+const reviewChunk = {
+  chunk_id: 'questions/qa-link-lang.en.html#link-language',
+  source_path: 'questions/qa-link-lang.en.html',
+  section_url: 'https://www.w3.org/International/questions/qa-link-lang#link-language',
+  title: 'Link language declarations',
+  heading_path: ['Use hreflang for linked resources'],
+  language: 'en',
+  status: 'review',
+  translation_state: 'unknown',
+  text: 'The hreflang attribute indicates the language of a linked resource. Review-stage guidance may change before publication.',
+  score: 0.74,
+  rank: 1
+};
+
+const publishedChunk = {
+  chunk_id: 'articles/http-charset/index.en.html#charset',
+  source_path: 'articles/http-charset/index.en.html',
+  section_url: 'https://www.w3.org/International/articles/http-charset/#charset',
+  title: 'Declaring character encoding in HTML',
+  heading_path: ['The charset parameter'],
+  language: 'en',
+  status: 'published',
+  translation_state: 'current',
+  text: 'For HTML pages, use UTF-8 and declare the character encoding early in the document.',
+  score: 0.52,
+  rank: 2
+};
+
+test('supported answers include citations and draft/review warnings', async () => {
+  const response = await answerFromRetrieval({
+    question: 'What does hreflang indicate?',
+    language: 'en',
+    retrieval: { results: [reviewChunk], debug: { query: 'What does hreflang indicate?' } },
+    enableDebug: true,
+    modelProvider: 'local'
+  });
+
+  assert.equal(response.evidence_status, 'supported');
+  assert.match(response.answer, /\[1\]/);
+  assert.equal(response.citations.length, 1);
+  assert.equal(response.citations[0].status, 'review');
+  assert(response.warnings.some((warning) => warning.type === 'uses_draft_or_review'));
+  assert(response.debug.final_context.includes('hreflang'));
+});
+
+test('mostly draft or review evidence uses stronger warning', async () => {
+  const response = await answerFromRetrieval({
+    question: 'What does hreflang indicate?',
+    language: 'en',
+    retrieval: { results: [reviewChunk, { ...reviewChunk, chunk_id: 'draft#x', status: 'draft', rank: 2 }] },
+    modelProvider: 'local'
+  });
+
+  assert(response.warnings.some((warning) => warning.type === 'primarily_draft_or_review'));
+});
+
+test('selected non-English answer discloses English fallback when no selected-language citation is used', async () => {
+  const response = await answerFromRetrieval({
+    question: 'hreflang 表示什么？',
+    language: 'zh-hans',
+    retrieval: { results: [reviewChunk] },
+    modelProvider: 'local'
+  });
+
+  assert(response.warnings.some((warning) => warning.type === 'english_fallback'));
+});
+
+test('citation validation fails closed for supported answers without citations', () => {
+  const validated = validateCitationsForEvidence({
+    answer: 'Use UTF-8.',
+    citations: [],
+    evidence_status: 'supported',
+    warnings: []
+  });
+
+  assert.equal(validated.evidence_status, 'insufficient_evidence');
+  assert.equal(validated.citations.length, 0);
+});
+
+test('conflict questions with mixed published and review evidence are treated as partial', async () => {
+  const response = await answerFromRetrieval({
+    question: 'Is there a conflict between published charset guidance and review hreflang guidance?',
+    language: 'en',
+    retrieval: { results: [reviewChunk, publishedChunk] },
+    modelProvider: 'local'
+  });
+
+  assert.equal(response.evidence_status, 'partially_supported');
+  assert.match(response.answer, /could not confirm a direct conflict/i);
+  assert(response.warnings.some((warning) => warning.type === 'uses_draft_or_review'));
+});

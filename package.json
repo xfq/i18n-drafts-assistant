@@ -1,0 +1,17 @@
+{
+  "name": "i18n-drafts-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "test": "node --test tests/*.test.js",
+    "index": "node src/indexing/indexer.js",
+    "rag:index": "node src/indexing/indexer.js",
+    "eval": "node src/evals/run.js"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

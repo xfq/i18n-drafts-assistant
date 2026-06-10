@@ -1,0 +1,254 @@
+[
+  {
+    "category": "character encoding",
+    "question": "How should I declare UTF-8 character encoding in HTML?",
+    "language": "en",
+    "required_source_paths": ["articles/http-charset/index.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": [],
+    "notes": "Published English source should answer directly."
+  },
+  {
+    "category": "character encoding",
+    "question": "Where should the meta charset declaration appear?",
+    "language": "en",
+    "required_source_paths": ["articles/http-charset/index.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": [],
+    "notes": "Checks section-level citation."
+  },
+  {
+    "category": "character encoding",
+    "question": "Can an HTTP Content-Type header include a charset parameter?",
+    "language": "en",
+    "required_source_paths": ["articles/http-charset/index.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": [],
+    "notes": "Checks HTTP header section retrieval."
+  },
+  {
+    "category": "multilingual fallback",
+    "question": "UTF-8 字符编码应如何声明？",
+    "language": "zh-hans",
+    "required_source_paths": ["articles/http-charset/index.zh-hans.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": [],
+    "notes": "Prefers Chinese source."
+  },
+  {
+    "category": "translation status behavior",
+    "question": "UTF-8 字符编码应如何声明？",
+    "language": "zh-hans",
+    "required_source_paths": ["articles/http-charset/index.zh-hans.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": [],
+    "notes": "Out-of-date translation state should be visible per source."
+  },
+  {
+    "category": "language tags",
+    "question": "What does hreflang indicate?",
+    "language": "en",
+    "required_source_paths": ["questions/qa-link-lang.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": ["uses_draft_or_review"],
+    "notes": "Review source should trigger warning."
+  },
+  {
+    "category": "language tags",
+    "question": "How do I indicate the language of a linked resource?",
+    "language": "en",
+    "required_source_paths": ["questions/qa-link-lang.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": ["uses_draft_or_review"],
+    "notes": "Review-stage guidance warning."
+  },
+  {
+    "category": "draft/review warning behavior",
+    "question": "Is hreflang guidance final?",
+    "language": "en",
+    "required_source_paths": ["questions/qa-link-lang.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": ["uses_draft_or_review", "primarily_draft_or_review"],
+    "notes": "Single review source is primary evidence."
+  },
+  {
+    "category": "obsolete exclusion",
+    "question": "obsolete old advice should not appear by default",
+    "language": "en",
+    "required_source_paths": [],
+    "disallowed_source_paths": ["questions/qa-obsolete.en.html"],
+    "expected_evidence_status": "insufficient_evidence",
+    "expected_warning_types": [],
+    "notes": "Obsolete source excluded by default."
+  },
+  {
+    "category": "insufficient evidence",
+    "question": "What payment API should I use for subscriptions?",
+    "language": "en",
+    "required_source_paths": [],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "insufficient_evidence",
+    "expected_warning_types": [],
+    "notes": "Out-of-corpus topic."
+  },
+  {
+    "category": "insufficient evidence",
+    "question": "How do I deploy a Kubernetes cluster?",
+    "language": "en",
+    "required_source_paths": [],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "insufficient_evidence",
+    "expected_warning_types": [],
+    "notes": "Out-of-corpus topic."
+  },
+  {
+    "category": "bidirectional text",
+    "question": "What does the index say about bidirectional isolation?",
+    "language": "en",
+    "required_source_paths": [],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "insufficient_evidence",
+    "expected_warning_types": [],
+    "notes": "Fixture lacks bidi sources; full corpus should add required source paths."
+  },
+  {
+    "category": "declaring page language",
+    "question": "How should I declare the language of an HTML page?",
+    "language": "en",
+    "required_source_paths": [],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "insufficient_evidence",
+    "expected_warning_types": [],
+    "notes": "Fixture lacks language declaration source."
+  },
+  {
+    "category": "multilingual fallback",
+    "question": "hreflang 表示什么？",
+    "language": "zh-hans",
+    "required_source_paths": ["questions/qa-link-lang.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": ["english_fallback", "uses_draft_or_review"],
+    "notes": "No Chinese hreflang fixture, so English fallback is disclosed."
+  },
+  {
+    "category": "source status filters",
+    "question": "What does hreflang indicate?",
+    "language": "en",
+    "statuses": ["published"],
+    "required_source_paths": [],
+    "disallowed_source_paths": ["questions/qa-link-lang.en.html"],
+    "expected_evidence_status": "insufficient_evidence",
+    "expected_warning_types": [],
+    "notes": "Review source excluded by filter."
+  },
+  {
+    "category": "source status filters",
+    "question": "How should I declare UTF-8 character encoding in HTML?",
+    "language": "en",
+    "statuses": ["review"],
+    "required_source_paths": [],
+    "disallowed_source_paths": ["articles/http-charset/index.en.html"],
+    "expected_evidence_status": "insufficient_evidence",
+    "expected_warning_types": [],
+    "notes": "Published source excluded by filter."
+  },
+  {
+    "category": "character encoding",
+    "question": "Should HTML use UTF-8?",
+    "language": "en",
+    "required_source_paths": ["articles/http-charset/index.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": [],
+    "notes": "Exact term retrieval."
+  },
+  {
+    "category": "character encoding",
+    "question": "What is useful about in-document declarations?",
+    "language": "en",
+    "required_source_paths": ["articles/http-charset/index.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": [],
+    "notes": "HTTP section wording."
+  },
+  {
+    "category": "language tags",
+    "question": "Which attribute indicates linked resource language?",
+    "language": "en",
+    "required_source_paths": ["questions/qa-link-lang.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": ["uses_draft_or_review"],
+    "notes": "Keyword retrieval for hreflang."
+  },
+  {
+    "category": "source browsing",
+    "question": "Show source support for UTF-8 declarations.",
+    "language": "en",
+    "required_source_paths": ["articles/http-charset/index.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": [],
+    "notes": "Requires citations and source panel."
+  },
+  {
+    "category": "citation enforcement",
+    "question": "Tell me about character encoding declaration.",
+    "language": "en",
+    "required_source_paths": ["articles/http-charset/index.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": [],
+    "notes": "Supported answer must include citations."
+  },
+  {
+    "category": "citation enforcement",
+    "question": "Tell me about linked resource language.",
+    "language": "en",
+    "required_source_paths": ["questions/qa-link-lang.en.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": ["uses_draft_or_review"],
+    "notes": "Review citation must be present."
+  },
+  {
+    "category": "translation status behavior",
+    "question": "中文 UTF-8 声明来源是否过期？",
+    "language": "zh-hans",
+    "required_source_paths": ["articles/http-charset/index.zh-hans.html"],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "supported",
+    "expected_warning_types": [],
+    "notes": "Source should carry out_of_date translation state."
+  },
+  {
+    "category": "contradiction handling",
+    "question": "Is there a conflict between published charset guidance and review hreflang guidance?",
+    "language": "en",
+    "required_source_paths": [],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "partially_supported",
+    "expected_warning_types": [],
+    "notes": "Fixture does not contain conflicting content; model prompt covers full-corpus behavior."
+  },
+  {
+    "category": "privacy",
+    "question": "What personal data does this assistant store?",
+    "language": "en",
+    "required_source_paths": [],
+    "disallowed_source_paths": [],
+    "expected_evidence_status": "insufficient_evidence",
+    "expected_warning_types": [],
+    "notes": "App privacy docs are not indexed source content."
+  }
+]

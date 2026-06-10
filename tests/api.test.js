@@ -1,0 +1,59 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import { buildIndex } from '../src/indexing/indexer.js';
+import { createServer } from '../src/server.js';
+
+const fixtureRoot = new URL('./fixtures/i18n-mini/', import.meta.url).pathname;
+
+test('HTTP API serves health, retrieval, and cited answers without fetching sources on ask', async () => {
+  const index = await buildIndex({
+    sourceRoot: fixtureRoot,
+    publicBaseUrl: 'https://www.w3.org/International',
+    sourceMode: 'local',
+    sourceRef: 'fixture',
+    sourceCommit: 'fixture-sha',
+    write: false
+  });
+  const app = createServer({
+    index,
+    config: {
+      enableDebug: true,
+      modelProvider: 'local',
+      publicBaseUrl: 'https://www.w3.org/International',
+      sourceMode: 'local',
+      sourceRef: 'fixture',
+      sourceRepoUrl: '',
+      sourceCommit: 'fixture-sha',
+      rateLimitWindowMs: 60_000,
+      rateLimitMax: 20
+    }
+  });
+  app.listen(0, '127.0.0.1');
+  await once(app, 'listening');
+  const { port } = app.address();
+
+  try {
+    const health = await fetch(`http://127.0.0.1:${port}/api/health`).then((response) => response.json());
+    assert.equal(health.ok, true);
+    assert.equal(health.indexed_documents, 4);
+
+    const retrieved = await fetch(`http://127.0.0.1:${port}/api/retrieve`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query: 'declare UTF-8 character encoding', language: 'en', statuses: ['published', 'review', 'draft'] })
+    }).then((response) => response.json());
+    assert.equal(retrieved.results[0].source_path, 'articles/http-charset/index.en.html');
+
+    const answer = await fetch(`http://127.0.0.1:${port}/api/ask`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question: 'How should I declare UTF-8 character encoding?', language: 'en', statuses: ['published', 'review', 'draft'], includeObsolete: false })
+    }).then((response) => response.json());
+    assert.equal(answer.evidence_status, 'supported');
+    assert(answer.citations.length > 0);
+    assert.equal(answer.debug.retrieved_after_ranking[0].source_path, 'articles/http-charset/index.en.html');
+  } finally {
+    app.close();
+  }
+});

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="How to declare character encoding for HTML content.">
+  <title>Declaring character encoding in HTML</title>
+  <script>
+    var f = {};
+    f.directory = 'articles/http-charset/';
+    f.filename = 'index';
+    f.authors = 'Richard Ishida';
+    f.firstPubDate = '2003-09-01';
+    f.lastSubstUpdate = '2024-02-11';
+    f.status = 'published';
+    f.thisVersion = 'https://www.w3.org/International/articles/http-charset/';
+    f.breadcrumb = 'Character encoding';
+  </script>
+</head>
+<body>
+  <header>W3C Internationalization</header>
+  <main>
+    <h1>Declaring character encoding in HTML</h1>
+    <section id="charset">
+      <h2>The charset parameter</h2>
+      <p>For HTML pages, use UTF-8 and declare the character encoding early in the document.</p>
+      <p>You can use a meta charset declaration in the first 1024 bytes of the HTML document.</p>
+    </section>
+    <section id="http">
+      <h2>HTTP headers</h2>
+      <p>An HTTP Content-Type header can include a charset parameter, but in-document declarations are still useful.</p>
+    </section>
+  </main>
+  <footer>Boilerplate footer</footer>
+</body>
+</html>
