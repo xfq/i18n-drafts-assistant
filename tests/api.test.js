@@ -61,3 +61,38 @@ test('HTTP API serves health, retrieval, and cited answers without fetching sour
     app.close();
   }
 });
+
+test('HTTP API preserves expected API error status codes', async () => {
+  const app = createServer({
+    index: null,
+    config: {
+      enableDebug: true,
+      modelProvider: 'local',
+      publicBaseUrl: 'https://www.w3.org/International',
+      sourceMode: 'local',
+      sourceRef: 'fixture',
+      sourceRepoUrl: '',
+      sourceCommit: 'fixture-sha',
+      rateLimitWindowMs: 60_000,
+      rateLimitMax: 20
+    }
+  });
+  app.listen(0, '127.0.0.1');
+  await once(app, 'listening');
+  const { port } = app.address();
+
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/api/retrieve`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query: 'declare UTF-8 character encoding' })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 503);
+    assert.equal(body.evidence_status, 'error');
+    assert.match(body.error, /No search index is available/);
+  } finally {
+    app.close();
+  }
+});

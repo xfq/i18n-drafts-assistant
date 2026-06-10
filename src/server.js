@@ -25,7 +25,7 @@ export function createServer({ index = null, config = getConfig() } = {}) {
 
       await serveStatic(request, response, url);
     } catch (error) {
-      sendJson(response, 500, {
+      sendJson(response, httpErrorStatus(error), {
         evidence_status: 'error',
         error: error.message
       });
@@ -171,6 +171,11 @@ function sendJson(response, statusCode, body) {
     'cache-control': 'no-store'
   });
   response.end(JSON.stringify(body));
+}
+
+function httpErrorStatus(error) {
+  const statusCode = Number(error?.statusCode || error?.status);
+  return Number.isInteger(statusCode) && statusCode >= 400 && statusCode <= 599 ? statusCode : 500;
 }
 
 function mimeType(path) {
