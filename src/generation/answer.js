@@ -28,7 +28,7 @@ export async function answerFromRetrieval({
     };
   }
 
-  const citations = buildCitations(selectedChunks.slice(0, Math.min(3, selectedChunks.length)));
+  const citations = buildCitations(selectedChunks);
   const warnings = buildWarnings(citations, language);
   const prompt = buildPrompt({ question, language, chunks: selectedChunks });
   const conflictQuestion = asksAboutConflict(question) && hasMixedPublishedAndProvisional(citations);

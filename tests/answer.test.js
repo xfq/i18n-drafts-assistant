@@ -82,6 +82,44 @@ test('citation validation fails closed for supported answers without citations',
   assert.equal(validated.citations.length, 0);
 });
 
+test('citation validation keeps answer references aligned with returned citations', () => {
+  const citations = [
+    { chunk_id: 'source-1', label: 'Source 1' },
+    { chunk_id: 'source-2', label: 'Source 2' },
+    { chunk_id: 'source-3', label: 'Source 3' },
+    { chunk_id: 'source-4', label: 'Source 4' }
+  ];
+
+  const validated = validateCitationsForEvidence({
+    answer: 'Use quick tips for concise guidance [3]. Use Unicode design guidance for implementation details [4].',
+    citations,
+    evidence_status: 'supported',
+    warnings: []
+  });
+
+  assert.equal(validated.answer, 'Use quick tips for concise guidance [1]. Use Unicode design guidance for implementation details [2].');
+  assert.deepEqual(validated.citations.map((citation) => citation.chunk_id), ['source-3', 'source-4']);
+});
+
+test('answer generation exposes citations for every chunk shown to the model', async () => {
+  const response = await answerFromRetrieval({
+    question: 'How should I declare UTF-8 character encoding in HTML?',
+    language: 'en',
+    retrieval: {
+      results: [
+        publishedChunk,
+        { ...publishedChunk, chunk_id: 'source-2', source_path: 'source-2.html', rank: 2 },
+        { ...publishedChunk, chunk_id: 'source-3', source_path: 'source-3.html', rank: 3 },
+        { ...publishedChunk, chunk_id: 'source-4', source_path: 'source-4.html', rank: 4 }
+      ]
+    },
+    modelProvider: 'local'
+  });
+
+  assert.equal(response.citations.length, 4);
+  assert.equal(response.citations[3].chunk_id, 'source-4');
+});
+
 test('conflict questions with mixed published and review evidence are treated as partial', async () => {
   const response = await answerFromRetrieval({
     question: 'Is there a conflict between published charset guidance and review hreflang guidance?',
