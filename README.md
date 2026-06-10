@@ -1,5 +1,7 @@
 # Ask W3C i18n
 
+> **Unofficial project:** This is currently an unofficial project and is not an official W3C service.
+
 Public-facing AI assistant for W3C Internationalization content in the `w3c/i18n-drafts` repository.
 
 It indexes a local or cached `w3c/i18n-drafts` checkout, retrieves source chunks with metadata, and returns answers with mandatory citations and draft/review warnings.

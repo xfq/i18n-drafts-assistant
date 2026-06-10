@@ -116,6 +116,23 @@ pre:focus-visible {
   font-size: 0.875rem;
 }
 
+.project-notice {
+  inline-size: min(calc(100% - 2rem), 860px);
+  margin: 0 auto 1rem;
+  border: 1px solid var(--warning-border);
+  border-radius: 6px;
+  padding: 0.72rem 0.9rem;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 0.94rem;
+  font-weight: 560;
+  line-height: 1.45;
+}
+
+.project-notice strong {
+  font-weight: 800;
+}
+
 .header-link {
   flex: 0 0 auto;
   font-size: 0.9rem;

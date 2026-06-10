@@ -21,3 +21,17 @@ test('public UI keeps the main ask flow accessible', async () => {
   assert.match(page, /<ol id="citations" class="citation-list" role="list" aria-label="Cited sources"><\/ol>/);
   assert.doesNotMatch(page, /aria-labelledby="ask-heading"/);
 });
+
+test('public UI prominently states the project is unofficial', async () => {
+  const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+
+  assert.match(page, /<aside class="project-notice" aria-label="Project status">/);
+  assert.match(page, /currently an unofficial project/i);
+});
+
+test('project notice uses a shorter centered max width', async () => {
+  const css = await readFile(new URL('../public/styles.css', import.meta.url), 'utf8');
+
+  assert.match(css, /\.project-notice\s*{[^}]*inline-size:\s*min\(calc\(100% - 2rem\), 860px\);/s);
+  assert.doesNotMatch(css, /\.project-notice\s*{[^}]*inline-size:\s*min\(calc\(100% - 2rem\), 1080px\);/s);
+});
