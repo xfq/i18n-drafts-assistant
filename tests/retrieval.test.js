@@ -106,7 +106,7 @@ test('retrieval does not treat stopword overlap as enough evidence', () => {
 
 test('retrieval rejects chunks that only match one broad non-technical term', () => {
   const result = retrieve({
-    query: 'How should I declare the language of an HTML page?',
+    query: 'How do I configure payment processing for subscriptions?',
     language: 'en',
     statuses: ['published', 'review', 'draft'],
     includeObsolete: false,
@@ -115,6 +115,43 @@ test('retrieval rejects chunks that only match one broad non-technical term', ()
   });
 
   assert.equal(result.results.length, 0);
+});
+
+test('retrieval matches inflected forms via stemming', () => {
+  const result = retrieve({
+    query: 'How should I declare the encoding of my document?',
+    language: 'en',
+    statuses: ['published', 'review', 'draft'],
+    includeObsolete: false,
+    chunks,
+    limit: 5
+  });
+
+  assert(result.results.length > 0);
+  assert.equal(result.results[0].chunk_id, 'articles/http-charset/index.en.html#charset');
+});
+
+test('retrieval matches hyphenated and spaced variants of the same term', () => {
+  const hyphenated = retrieve({
+    query: 'utf-8 encoding',
+    language: 'en',
+    statuses: ['published', 'review', 'draft'],
+    includeObsolete: false,
+    chunks,
+    limit: 5
+  });
+
+  const spaced = retrieve({
+    query: 'utf 8 encoding',
+    language: 'en',
+    statuses: ['published', 'review', 'draft'],
+    includeObsolete: false,
+    chunks,
+    limit: 5
+  });
+
+  assert.equal(hyphenated.results[0].chunk_id, 'articles/http-charset/index.en.html#charset');
+  assert.equal(spaced.results[0].chunk_id, 'articles/http-charset/index.en.html#charset');
 });
 
 test('retrieval does not leak published answers through excluded status filters', () => {

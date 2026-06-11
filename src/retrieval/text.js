@@ -1,3 +1,7 @@
+import { stem } from './stemmer.js';
+
+const CJK_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+
 export function normalizeQuery(query = '') {
   return String(query).normalize('NFKC').trim().toLowerCase().replace(/\s+/g, ' ');
 }
@@ -9,9 +13,26 @@ export function tokenize(value = '') {
   let match;
 
   while ((match = pattern.exec(normalized))) {
-    const token = match[0];
-    if ((token.length > 1 || /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(token)) && !STOPWORDS.has(token)) {
-      tokens.push(token);
+    const raw = match[0];
+
+    if (CJK_RE.test(raw)) {
+      tokens.push(raw);
+      continue;
+    }
+
+    if (raw.length <= 1) continue;
+
+    if (raw.includes('-')) {
+      const fullStem = stem(raw);
+      if (!STEMMED_STOPWORDS.has(fullStem)) tokens.push(fullStem);
+      for (const part of raw.split('-')) {
+        if (part.length <= 1) continue;
+        const partStem = stem(part);
+        if (!STEMMED_STOPWORDS.has(partStem)) tokens.push(partStem);
+      }
+    } else {
+      const stemmed = stem(raw);
+      if (!STEMMED_STOPWORDS.has(stemmed)) tokens.push(stemmed);
     }
   }
 
@@ -71,6 +92,8 @@ const STOPWORDS = new Set([
   'show'
 ]);
 
+const STEMMED_STOPWORDS = new Set([...STOPWORDS].map((w) => stem(w)));
+
 export function keywordScore(queryTokens, text) {
   return keywordMatchStats(queryTokens, text).score;
 }
@@ -121,11 +144,11 @@ export function cosineSimilarity(a, b) {
   return dot;
 }
 
-const TECHNICAL_TERMS = new Set([
+const STEMMED_TECHNICAL_TERMS = new Set([
   'bidi',
   'charset',
   'dir',
-  'encoding',
+  'encod',
   'hreflang',
   'lang',
   'ltr',
@@ -134,9 +157,9 @@ const TECHNICAL_TERMS = new Set([
 ]);
 
 function isTechnicalToken(token) {
-  return TECHNICAL_TERMS.has(token) ||
+  return STEMMED_TECHNICAL_TERMS.has(token) ||
     /[\d-]/.test(token) ||
-    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(token);
+    CJK_RE.test(token);
 }
 
 function normalizeVector(vector) {
