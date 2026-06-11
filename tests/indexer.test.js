@@ -34,6 +34,52 @@ test('chunker creates section citations with heading paths and anchors', () => {
   assert.equal(chunks[0].text, 'The charset parameter Use UTF-8.');
 });
 
+test('chunker emits separate chunks for nested sections', () => {
+  const page = {
+    source_path: 'articles/nested/index.en.html',
+    canonical_url: 'https://www.w3.org/International/articles/nested/',
+    language: 'en',
+    status: 'published',
+    translation_state: 'current',
+    title: 'Nested sections test',
+    html: [
+      '<main><h1>Nested sections test</h1>',
+      '<section id="outer">',
+      '<h2>Outer heading</h2>',
+      '<section id="inner">',
+      '<h3>Inner heading</h3>',
+      '<p>Inner content.</p>',
+      '</section>',
+      '<p>Outer trailing content.</p>',
+      '</section>',
+      '<section id="sibling">',
+      '<h2>Sibling heading</h2>',
+      '<p>Sibling content.</p>',
+      '</section>',
+      '</main>'
+    ].join('')
+  };
+
+  const chunks = chunkHtmlPage(page);
+  const ids = chunks.map((c) => c.section_id);
+
+  assert(ids.includes('outer'), 'outer section should be chunked');
+  assert(ids.includes('inner'), 'nested section should be chunked');
+  assert(ids.includes('sibling'), 'sibling section should be chunked');
+
+  const outer = chunks.find((c) => c.section_id === 'outer');
+  const inner = chunks.find((c) => c.section_id === 'inner');
+  const sibling = chunks.find((c) => c.section_id === 'sibling');
+
+  assert.match(outer.text, /Outer heading/);
+  assert.match(outer.text, /Inner content/);
+  assert.match(outer.text, /Outer trailing content/);
+  assert.match(inner.text, /Inner heading/);
+  assert.match(inner.text, /Inner content/);
+  assert.match(sibling.text, /Sibling heading/);
+  assert.match(sibling.text, /Sibling content/);
+});
+
 test('indexer builds documents and chunks with source metadata', async () => {
   const index = await buildIndex({
     sourceRoot: fixtureRoot,

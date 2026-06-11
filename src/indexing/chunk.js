@@ -38,12 +38,44 @@ export function chunkHtmlPage(page, options = {}) {
 
 function extractSectionChunks(html) {
   const chunks = [];
-  const sectionPattern = /<section\b([^>]*)>([\s\S]*?)<\/section>/gi;
-  let match;
+  const openPattern = /<section\b([^>]*)>/gi;
+  const closePattern = /<\/section\s*>/gi;
+  let openMatch;
 
-  while ((match = sectionPattern.exec(html))) {
-    const attrs = match[1] || '';
-    const sectionHtml = match[2] || '';
+  while ((openMatch = openPattern.exec(html))) {
+    const attrs = openMatch[1] || '';
+    const contentStart = openMatch.index + openMatch[0].length;
+    let depth = 1;
+    let searchFrom = contentStart;
+    let contentEnd = -1;
+
+    while (depth > 0) {
+      openPattern.lastIndex = searchFrom;
+      closePattern.lastIndex = searchFrom;
+      const nextOpen = openPattern.exec(html);
+      const nextClose = closePattern.exec(html);
+
+      if (!nextClose) {
+        contentEnd = html.length;
+        break;
+      }
+
+      if (nextOpen && nextOpen.index < nextClose.index) {
+        depth++;
+        searchFrom = nextOpen.index + nextOpen[0].length;
+      } else {
+        depth--;
+        if (depth === 0) {
+          contentEnd = nextClose.index;
+        } else {
+          searchFrom = nextClose.index + nextClose[0].length;
+        }
+      }
+    }
+
+    if (contentEnd === -1) continue;
+
+    const sectionHtml = html.slice(contentStart, contentEnd);
     const sectionId = firstMatch(attrs, /\bid=["']?([^"'\s>]+)/i);
     const heading = cleanText(firstMatch(sectionHtml, /<h[2-4]\b[^>]*>([\s\S]*?)<\/h[2-4]>/i));
     const text = htmlToCleanText(sectionHtml);
@@ -55,6 +87,8 @@ function extractSectionChunks(html) {
         text
       });
     }
+
+    openPattern.lastIndex = contentStart;
   }
 
   return chunks;
