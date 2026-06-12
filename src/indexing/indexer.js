@@ -8,7 +8,7 @@ import { parseHtmlPage } from './parse-html.js';
 import { parseTranslationsFile, EMPTY_TRANSLATIONS } from './parse-translations.js';
 import { translationDataPathForSourcePath } from './canonical-url.js';
 import { chunkHtmlPage } from './chunk.js';
-import { resolveSource } from './source-sync.js';
+import { resolveSource, resolveSources } from './source-sync.js';
 
 export async function buildIndex({
   sourceRoot,
@@ -16,11 +16,15 @@ export async function buildIndex({
   sourceMode = 'local',
   sourceRef = '',
   sourceCommit = '',
+  sourceId = '',
+  contentRoots = null,
+  requireMetadata = true,
+  defaultStatus = '',
   write = true,
   indexPath = '.data/index.json'
 }) {
   const root = resolve(sourceRoot);
-  const discovered = await discoverContentFilesDetailed(root);
+  const discovered = await discoverContentFilesDetailed(root, { contentRoots, requireMetadata });
   const documents = [];
   const chunks = [];
   const warnings = [];
@@ -38,9 +42,16 @@ export async function buildIndex({
         translations,
         sourceMode,
         sourceRef,
-        sourceCommit
+        sourceCommit,
+        defaultStatus
       });
+      if (sourceId) document.source_id = sourceId;
       const documentChunks = chunkHtmlPage(document, { publicBaseUrl });
+      if (sourceId) {
+        for (const chunk of documentChunks) {
+          chunk.source_id = sourceId;
+        }
+      }
       documents.push(document);
       chunks.push(...documentChunks);
     } catch (error) {
@@ -103,7 +114,122 @@ async function readTranslations(sourceRoot, sourcePath) {
   }
 }
 
+export async function buildMultiSourceIndex(config) {
+  const resolvedSources = await resolveSources(config);
+  const allDocuments = [];
+  const allChunks = [];
+  const allWarnings = [];
+  const allErrors = [];
+  const sourceSummaries = [];
+  const startedAt = new Date().toISOString();
+  let totalSkipped = 0;
+
+  for (const source of resolvedSources) {
+    console.log(`Indexing source: ${source.id} (${source.sourceRoot})`);
+    const sourceIndex = await buildIndex({
+      sourceRoot: source.sourceRoot,
+      publicBaseUrl: source.publicBaseUrl,
+      sourceMode: source.mode,
+      sourceRef: source.ref,
+      sourceCommit: source.sourceCommit,
+      sourceId: source.id,
+      contentRoots: source.contentRoots,
+      requireMetadata: source.requireMetadata,
+      defaultStatus: source.defaultStatus,
+      write: false
+    });
+
+    allDocuments.push(...sourceIndex.documents);
+    allChunks.push(...sourceIndex.chunks);
+    allWarnings.push(...sourceIndex.warnings);
+    allErrors.push(...sourceIndex.errors);
+    totalSkipped += sourceIndex.summary.skipped;
+
+    sourceSummaries.push({
+      id: source.id,
+      mode: source.mode,
+      ref: source.ref,
+      commit: source.sourceCommit,
+      root: source.sourceRoot,
+      publicBaseUrl: source.publicBaseUrl,
+      document_count: sourceIndex.summary.document_count,
+      chunk_count: sourceIndex.summary.chunk_count,
+      skipped: sourceIndex.summary.skipped,
+      error_count: sourceIndex.summary.error_count
+    });
+  }
+
+  const finishedAt = new Date().toISOString();
+  const index = {
+    version: 1,
+    sources: sourceSummaries,
+    source: sourceSummaries.length === 1
+      ? { mode: sourceSummaries[0].mode, ref: sourceSummaries[0].ref, commit: sourceSummaries[0].commit, root: sourceSummaries[0].root }
+      : { mode: 'multi', ref: '', commit: '', root: '' },
+    summary: {
+      started_at: startedAt,
+      finished_at: finishedAt,
+      document_count: allDocuments.length,
+      chunk_count: allChunks.length,
+      skipped: totalSkipped,
+      warning_count: allWarnings.length,
+      error_count: allErrors.length
+    },
+    index_runs: [
+      {
+        id: startedAt,
+        started_at: startedAt,
+        finished_at: finishedAt,
+        status: allErrors.length > 0 ? 'completed_with_errors' : 'completed',
+        document_count: allDocuments.length,
+        chunk_count: allChunks.length,
+        skipped_count: totalSkipped,
+        warning_count: allWarnings.length,
+        error_count: allErrors.length,
+        error_message: allErrors.map((error) => error.message).join('; '),
+        sources: sourceSummaries
+      }
+    ],
+    documents: allDocuments,
+    chunks: allChunks,
+    warnings: allWarnings,
+    errors: allErrors
+  };
+
+  return index;
+}
+
 export async function runIndexer(config = getConfig()) {
+  if (config.sources && config.sources.length > 1) {
+    const index = await buildMultiSourceIndex(config);
+    await saveIndex(index, config.indexPath);
+    printMultiSourceSummary(index);
+    return index;
+  }
+
+  // single-source path (backward compatible)
+  const sources = config.sources || [];
+  if (sources.length === 1) {
+    const source = sources[0];
+    const { sourceRoot, sourceCommit } = await resolveSingleSourceCompat(source, config);
+    const index = await buildIndex({
+      sourceRoot,
+      publicBaseUrl: source.publicBaseUrl || config.publicBaseUrl,
+      sourceMode: source.mode || config.sourceMode,
+      sourceRef: source.ref || config.sourceRef,
+      sourceCommit: sourceCommit || config.sourceCommit,
+      sourceId: source.id,
+      contentRoots: source.contentRoots,
+      requireMetadata: source.requireMetadata,
+      defaultStatus: source.defaultStatus,
+      write: true,
+      indexPath: config.indexPath
+    });
+    printSummary(index);
+    return index;
+  }
+
+  // legacy fallback (no sources array)
   const { sourceRoot, sourceCommit } = await resolveSource(config);
   const index = await buildIndex({
     sourceRoot,
@@ -117,6 +243,22 @@ export async function runIndexer(config = getConfig()) {
 
   printSummary(index);
   return index;
+}
+
+async function resolveSingleSourceCompat(source, config) {
+  const { resolveSources: rs } = await import('./source-sync.js');
+  const resolved = await rs({ sources: [source] });
+  return resolved[0] || { sourceRoot: '', sourceCommit: '' };
+}
+
+function printMultiSourceSummary(index) {
+  console.log(`Multi-source index: ${index.sources.length} sources`);
+  for (const source of index.sources) {
+    console.log(`  ${source.id}: ${source.document_count} docs, ${source.chunk_count} chunks`);
+  }
+  console.log(`Total: ${index.summary.document_count} documents, ${index.summary.chunk_count} chunks`);
+  console.log(`Skipped ${index.summary.skipped} support/example files`);
+  console.log(`Errors: ${index.summary.error_count}`);
 }
 
 function printSummary(index) {

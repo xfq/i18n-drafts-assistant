@@ -16,6 +16,7 @@ export function getConfig(overrides = {}) {
     sourceRefreshMode: firstDefined(overrides.sourceRefreshMode, env.SOURCE_REFRESH_MODE, 'manual'),
     sourceCommit: firstDefined(overrides.sourceCommit, env.SOURCE_COMMIT, ''),
     publicBaseUrl: firstDefined(overrides.publicBaseUrl, env.PUBLIC_BASE_URL, 'https://www.w3.org/International'),
+    sources: parseSources(overrides, env),
     modelProvider: firstDefined(overrides.modelProvider, env.MODEL_PROVIDER, 'local'),
     modelApiKey: firstDefined(overrides.modelApiKey, env.MODEL_API_KEY, ''),
     modelBaseUrl: firstDefined(overrides.modelBaseUrl, env.MODEL_BASE_URL, ''),
@@ -31,6 +32,54 @@ export function getConfig(overrides = {}) {
   };
 
   return config;
+}
+
+function parseSources(overrides, env) {
+  const raw = firstDefined(overrides.sources, env.SOURCES, '');
+  if (raw) {
+    try {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((source, index) => normalizeSource(source, index));
+      }
+    } catch {
+      // fall through to legacy single-source
+    }
+  }
+
+  return [
+    {
+      id: 'i18n-drafts',
+      mode: firstDefined(overrides.sourceMode, env.SOURCE_MODE, 'git'),
+      repoUrl: firstDefined(overrides.sourceRepoUrl, env.SOURCE_REPO_URL, 'https://github.com/w3c/i18n-drafts.git'),
+      ref: firstDefined(overrides.sourceRef, env.SOURCE_REF, 'gh-pages'),
+      cacheDir: firstDefined(overrides.sourceCacheDir, env.SOURCE_CACHE_DIR, '.cache/source/i18n-drafts'),
+      fetchDepth: Number(firstDefined(overrides.sourceFetchDepth, env.SOURCE_FETCH_DEPTH, 1)),
+      repoPath: firstDefined(overrides.sourceRepoPath, env.SOURCE_REPO_PATH, ''),
+      publicBaseUrl: firstDefined(overrides.publicBaseUrl, env.PUBLIC_BASE_URL, 'https://www.w3.org/International'),
+      contentRoots: null,
+      requireMetadata: true
+    }
+  ];
+}
+
+function normalizeSource(source, index) {
+  const requireMetadata = source.requireMetadata ?? source.require_metadata ?? true;
+  return {
+    id: source.id || `source-${index}`,
+    mode: source.mode || 'git',
+    repoUrl: source.repoUrl || source.repo_url || '',
+    ref: source.ref || 'gh-pages',
+    cacheDir: source.cacheDir || source.cache_dir || `.cache/source/${source.id || `source-${index}`}`,
+    fetchDepth: Number(source.fetchDepth ?? source.fetch_depth ?? 1),
+    repoPath: source.repoPath || source.repo_path || '',
+    publicBaseUrl: source.publicBaseUrl || source.public_base_url || source.baseUrl || '',
+    contentRoots: Array.isArray(source.contentRoots || source.content_roots)
+      ? (source.contentRoots || source.content_roots)
+      : null,
+    requireMetadata,
+    defaultStatus: source.defaultStatus || source.default_status || (requireMetadata ? '' : 'published')
+  };
 }
 
 export function loadEnvFile(envFilePath = '.env') {

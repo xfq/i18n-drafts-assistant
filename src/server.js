@@ -119,7 +119,7 @@ async function handleApi({ request, response, url, index, config }) {
 }
 
 function healthPayload(index, config) {
-  return {
+  const payload = {
     ok: Boolean(index),
     source_mode: index?.source?.mode || config.sourceMode,
     source_repo_url: config.sourceRepoUrl,
@@ -129,6 +129,13 @@ function healthPayload(index, config) {
     indexed_chunks: index?.chunks?.length || 0,
     last_indexed_at: index?.summary?.finished_at || null
   };
+
+  if (index?.sources?.length > 1) {
+    payload.sources = index.sources;
+    payload.source_mode = 'multi';
+  }
+
+  return payload;
 }
 
 function assertIndexReady(index) {

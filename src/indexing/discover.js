@@ -15,12 +15,16 @@ export const CONTENT_ROOTS = new Set([
 
 const IGNORED_SEGMENTS = new Set(['node_modules', '.git', '.cache', '.data', 'dist', 'build']);
 
-export async function discoverContentFiles(sourceRoot) {
-  const detailed = await discoverContentFilesDetailed(sourceRoot);
+export async function discoverContentFiles(sourceRoot, options) {
+  const detailed = await discoverContentFilesDetailed(sourceRoot, options);
   return detailed.files;
 }
 
-export async function discoverContentFilesDetailed(sourceRoot) {
+export async function discoverContentFilesDetailed(sourceRoot, options = {}) {
+  const contentRoots = options.contentRoots != null
+    ? new Set(options.contentRoots)
+    : CONTENT_ROOTS;
+  const requireMetadata = options.requireMetadata !== false;
   const files = [];
   let skipped = 0;
 
@@ -39,14 +43,14 @@ export async function discoverContentFilesDetailed(sourceRoot) {
       }
 
       if (!entry.isFile() || !entry.name.endsWith('.html')) continue;
-      if (!CONTENT_ROOTS.has(segments[0])) continue;
+      if (!matchesContentRoots(segments, contentRoots)) continue;
       if (segments.some((segment) => /-data$/i.test(segment))) {
         skipped += 1;
         continue;
       }
 
       const html = await readFile(absolutePath, 'utf8');
-      if (isLikelyContentPage(html)) {
+      if (isLikelyContentPage(html, { requireMetadata })) {
         files.push(relativePath);
       } else {
         skipped += 1;
@@ -57,6 +61,11 @@ export async function discoverContentFilesDetailed(sourceRoot) {
   await walk(sourceRoot);
   files.sort((a, b) => a.localeCompare(b));
   return { files, skipped };
+}
+
+function matchesContentRoots(segments, contentRoots) {
+  if (contentRoots.has('')) return true;
+  return contentRoots.has(segments[0]);
 }
 
 export function normalizePath(path) {

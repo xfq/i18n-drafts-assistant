@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { canonicalUrlForSourcePath } from '../src/indexing/canonical-url.js';
 import { parseTranslationsFile, translationStateForLanguage } from '../src/indexing/parse-translations.js';
-import { parseHtmlPage } from '../src/indexing/parse-html.js';
+import { parseHtmlPage, isLikelyContentPage } from '../src/indexing/parse-html.js';
 
 const fixtureRoot = new URL('./fixtures/i18n-mini/', import.meta.url);
 
@@ -52,4 +52,48 @@ test('HTML parser extracts W3C i18n metadata and cleaned main text', async () =>
   assert.equal(parsed.metadata.f.status, 'published');
   assert.match(parsed.text, /use UTF-8/i);
   assert.doesNotMatch(parsed.text, /Boilerplate footer/);
+});
+
+test('isLikelyContentPage requires f-metadata by default but accepts pages without it when requireMetadata is false', async () => {
+  const withMetadata = '<html lang="en"><body><h1>Title</h1><script>var f = { status: "published" };</script></body></html>';
+  const withoutMetadata = '<html lang="en"><body><h1>Title</h1><p>Content only.</p></body></html>';
+  const noLang = '<html><body><h1>Title</h1></body></html>';
+
+  assert.equal(isLikelyContentPage(withMetadata), true);
+  assert.equal(isLikelyContentPage(withoutMetadata), false);
+  assert.equal(isLikelyContentPage(noLang), false);
+
+  assert.equal(isLikelyContentPage(withMetadata, { requireMetadata: false }), true);
+  assert.equal(isLikelyContentPage(withoutMetadata, { requireMetadata: false }), true);
+  assert.equal(isLikelyContentPage(noLang, { requireMetadata: false }), false);
+});
+
+test('parseHtmlPage uses defaultStatus when no f metadata is present', () => {
+  const html = '<html lang="en"><head><title>Spec Title</title></head><body><h2>Introduction</h2><p>Content.</p></body></html>';
+  const withDefault = parseHtmlPage({ html, sourcePath: 'index.en.html', publicBaseUrl: 'https://example.com', defaultStatus: 'published' });
+  const withoutDefault = parseHtmlPage({ html, sourcePath: 'index.en.html', publicBaseUrl: 'https://example.com' });
+
+  assert.equal(withDefault.status, 'published');
+  assert.equal(withoutDefault.status, 'notreviewed');
+});
+
+test('parseHtmlPage prefers f.status over defaultStatus', () => {
+  const html = '<html lang="en"><head><title>T</title></head><body><h1>T</h1><script>var f = { status: "published" };</script></body></html>';
+  const parsed = parseHtmlPage({ html, sourcePath: 'index.en.html', publicBaseUrl: 'https://example.com', defaultStatus: 'draft' });
+
+  assert.equal(parsed.status, 'published');
+});
+
+test('isLikelyContentPage accepts pages without h1 when they have h2 or title and requireMetadata is false', () => {
+  const withH2Only = '<html lang="en"><head><title>Spec Title</title></head><body><h2>Introduction</h2></body></html>';
+  const withTitleOnly = '<html lang="en"><head><title>Spec Title</title></head><body><p>Content.</p></body></html>';
+  const noHeading = '<html lang="en"><body><p>Content only.</p></body></html>';
+  const h2WithMetadata = '<html lang="en"><body><h2>Intro</h2><script>var f = { status: "draft" };</script></body></html>';
+
+  assert.equal(isLikelyContentPage(withH2Only, { requireMetadata: false }), true);
+  assert.equal(isLikelyContentPage(withTitleOnly, { requireMetadata: false }), true);
+  assert.equal(isLikelyContentPage(noHeading, { requireMetadata: false }), false);
+
+  assert.equal(isLikelyContentPage(withH2Only), false);
+  assert.equal(isLikelyContentPage(h2WithMetadata), false);
 });

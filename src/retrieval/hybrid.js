@@ -110,7 +110,7 @@ function translationBoost(chunk) {
 }
 
 function publicChunk(chunk) {
-  return {
+  const result = {
     chunk_id: chunk.chunk_id,
     source_path: chunk.source_path,
     section_url: chunk.section_url,
@@ -121,6 +121,8 @@ function publicChunk(chunk) {
     translation_state: chunk.translation_state,
     text: chunk.text
   };
+  if (chunk.source_id) result.source_id = chunk.source_id;
+  return result;
 }
 
 function round(value) {

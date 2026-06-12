@@ -6,6 +6,7 @@ import { chunkHtmlPage } from '../src/indexing/chunk.js';
 import { buildIndex } from '../src/indexing/indexer.js';
 
 const fixtureRoot = new URL('./fixtures/i18n-mini/', import.meta.url).pathname;
+const specdevRoot = new URL('./fixtures/specdev-mini/', import.meta.url).pathname;
 
 test('content discovery indexes primary content roots and skips support data HTML', async () => {
   const files = await discoverContentFiles(fixtureRoot);
@@ -97,4 +98,40 @@ test('indexer builds documents and chunks with source metadata', async () => {
   assert(index.chunks.some((chunk) => chunk.chunk_id === 'articles/http-charset/index.en.html#charset'));
   assert(index.documents.some((doc) => doc.translation_state === 'out_of_date'));
   assert.equal(index.summary.skipped, 1);
+});
+
+test('discovery with custom contentRoots and requireMetadata finds specdev pages', async () => {
+  const files = await discoverContentFiles(specdevRoot, { contentRoots: [''], requireMetadata: false });
+
+  assert(files.includes('index.en.html'));
+  assert(files.includes('text-direction.en.html'));
+  assert.equal(files.length, 2);
+});
+
+test('discovery with default contentRoots skips specdev root-level files', async () => {
+  const files = await discoverContentFiles(specdevRoot);
+  assert.equal(files.length, 0);
+});
+
+test('indexer builds per-source index with source_id on documents and chunks', async () => {
+  const index = await buildIndex({
+    sourceRoot: specdevRoot,
+    publicBaseUrl: 'https://w3c.github.io/bp-i18n-specdev',
+    sourceMode: 'local',
+    sourceRef: 'fixture',
+    sourceCommit: 'fixture-sha',
+    sourceId: 'bp-i18n-specdev',
+    contentRoots: [''],
+    requireMetadata: false,
+    defaultStatus: 'published',
+    write: false
+  });
+
+  assert.equal(index.documents.length, 2);
+  assert(index.documents.every((doc) => doc.source_id === 'bp-i18n-specdev'));
+  assert(index.chunks.every((chunk) => chunk.source_id === 'bp-i18n-specdev'));
+  assert(index.chunks.some((chunk) => chunk.chunk_id === 'index.en.html#char-encoding'));
+  assert(index.chunks.some((chunk) => chunk.chunk_id === 'text-direction.en.html#bidi-basics'));
+  assert(index.documents.every((doc) => doc.status === 'published'), 'specdev docs should use defaultStatus when no f metadata is present');
+  assert(index.chunks.every((chunk) => chunk.status === 'published'), 'specdev chunks should inherit the published status');
 });

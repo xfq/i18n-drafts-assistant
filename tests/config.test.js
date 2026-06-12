@@ -10,6 +10,7 @@ const touchedKeys = [
   'SOURCE_MODE',
   'SOURCE_REPO_PATH',
   'SOURCE_REF',
+  'SOURCES',
   'ENABLE_DEBUG',
   'MODEL_PROVIDER',
   'MODEL_API_KEY',
@@ -75,6 +76,68 @@ test('parseEnvFileContent ignores comments and supports inline comments outside 
     SINGLE: 'another # value',
     EMPTY: '',
     SPACED: 'spaced value'
+  });
+});
+
+test('getConfig parses SOURCES JSON array and normalizes source entries', async () => {
+  const sources = JSON.stringify([
+    {
+      id: 'i18n-drafts',
+      repoUrl: 'https://github.com/w3c/i18n-drafts.git',
+      ref: 'gh-pages',
+      publicBaseUrl: 'https://www.w3.org/International'
+    },
+    {
+      id: 'bp-i18n-specdev',
+      repo_url: 'https://github.com/w3c/bp-i18n-specdev.git',
+      ref: 'gh-pages',
+      public_base_url: 'https://w3c.github.io/bp-i18n-specdev',
+      content_roots: [''],
+      require_metadata: false
+    }
+  ]);
+  const envFilePath = await writeTempEnv(`SOURCES=${sources}`);
+
+  await withCleanEnv(async () => {
+    const config = getConfig({ envFilePath });
+
+    assert.equal(config.sources.length, 2);
+    assert.equal(config.sources[0].id, 'i18n-drafts');
+    assert.equal(config.sources[0].repoUrl, 'https://github.com/w3c/i18n-drafts.git');
+    assert.equal(config.sources[0].publicBaseUrl, 'https://www.w3.org/International');
+    assert.equal(config.sources[0].requireMetadata, true);
+    assert.equal(config.sources[1].id, 'bp-i18n-specdev');
+    assert.equal(config.sources[1].repoUrl, 'https://github.com/w3c/bp-i18n-specdev.git');
+    assert.equal(config.sources[1].publicBaseUrl, 'https://w3c.github.io/bp-i18n-specdev');
+    assert.deepEqual(config.sources[1].contentRoots, ['']);
+    assert.equal(config.sources[1].requireMetadata, false);
+    assert.equal(config.sources[0].defaultStatus, '');
+    assert.equal(config.sources[1].defaultStatus, 'published');
+  });
+});
+
+test('getConfig falls back to legacy single-source when SOURCES is not set', async () => {
+  const envFilePath = await writeTempEnv('SOURCE_MODE=git\nSOURCE_REF=main\n');
+
+  await withCleanEnv(async () => {
+    const config = getConfig({ envFilePath });
+
+    assert.equal(config.sources.length, 1);
+    assert.equal(config.sources[0].id, 'i18n-drafts');
+    assert.equal(config.sources[0].mode, 'git');
+    assert.equal(config.sources[0].ref, 'main');
+    assert.equal(config.sources[0].requireMetadata, true);
+  });
+});
+
+test('getConfig falls back to legacy single-source on invalid SOURCES JSON', async () => {
+  const envFilePath = await writeTempEnv('SOURCES=not-valid-json\n');
+
+  await withCleanEnv(async () => {
+    const config = getConfig({ envFilePath });
+
+    assert.equal(config.sources.length, 1);
+    assert.equal(config.sources[0].id, 'i18n-drafts');
   });
 });
 

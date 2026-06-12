@@ -10,7 +10,8 @@ export function parseHtmlPage({
   translations = EMPTY_TRANSLATIONS,
   sourceMode = 'local',
   sourceRef = '',
-  sourceCommit = ''
+  sourceCommit = '',
+  defaultStatus = ''
 }) {
   const f = extractFMetadata(html);
   const htmlLang = normalizeLanguage(firstMatch(html, /<html\b[^>]*\blang=["']?([^"'\s>]+)/i));
@@ -24,7 +25,7 @@ export function parseHtmlPage({
     firstMatch(html, /<meta\b[^>]*name=["']description["'][^>]*content=["']([^"']*)["'][^>]*>/i) ||
     firstMatch(html, /<meta\b[^>]*content=["']([^"']*)["'][^>]*name=["']description["'][^>]*>/i)
   );
-  const status = normalizeStatus(f.status);
+  const status = f.status ? normalizeStatus(f.status) : (defaultStatus || normalizeStatus(f.status));
   const canonicalUrl = canonicalUrlForSourcePath(sourcePath, publicBaseUrl);
   const text = htmlToCleanText(html);
   const indexedAt = new Date().toISOString();
@@ -56,10 +57,14 @@ export function parseHtmlPage({
   };
 }
 
-export function isLikelyContentPage(html) {
-  return /<html\b[^>]*\blang=/i.test(html) &&
-    /<h1\b/i.test(html) &&
-    (/\bf\.status\b/i.test(html) || /\bvar\s+f\s*=/i.test(html) || /\bf\s*=\s*\{/i.test(html));
+export function isLikelyContentPage(html, options = {}) {
+  const requireMetadata = options.requireMetadata !== false;
+  const hasLang = /<html\b[^>]*\blang=/i.test(html);
+  if (!hasLang) return false;
+  const hasH1 = /<h1\b/i.test(html);
+  if (!requireMetadata) return hasH1 || /<h2\b/i.test(html) || /<title\b/i.test(html);
+  if (!hasH1) return false;
+  return /\bf\.status\b/i.test(html) || /\bvar\s+f\s*=/i.test(html) || /\bf\s*=\s*\{/i.test(html);
 }
 
 export function extractFMetadata(html = '') {
