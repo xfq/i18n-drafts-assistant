@@ -128,6 +128,9 @@ export function keywordMatchStats(queryTokens, text) {
 }
 
 export function hashedVector(tokens, dimensions = 128) {
+  // Map arbitrary tokens into a fixed number of hash buckets. The result is a
+  // compact count vector for local similarity scoring; it is not a learned
+  // embedding, and different tokens may share a bucket.
   const vector = new Array(dimensions).fill(0);
   for (const token of tokens) {
     const hash = fnv1a(token);

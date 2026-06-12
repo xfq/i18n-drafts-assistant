@@ -31,7 +31,7 @@ The browser receives the files in `public/` directly from the Node server.
 - `src/db/store.js`: JSON index persistence and JSONL query logging.
 - `src/indexing/`: source sync, content discovery, HTML parsing,
   translation metadata parsing, canonical URL generation, chunk creation, and index writing.
-- `src/retrieval/`: query normalization, tokenization, stemming, hashed-vector scoring, status/language/translation boosts, and result ranking.
+- `src/retrieval/`: query normalization, tokenization, stemming, keyword scoring, hash-bucket vector similarity, status/language/translation boosts, and result ranking.
 - `src/generation/`: prompt construction, local extractive answer generation, optional OpenAI-compatible model calls, citation construction, citation validation, and answer warnings.
 - `src/rate-limit.js`: in-memory API rate limiting keyed by direct client IP or a trusted forwarded client IP.
 - `src/evals/`: deterministic evaluation cases for retrieval and answer behavior against an existing index.
@@ -47,6 +47,11 @@ The indexer entry point is `runIndexer()` in `src/indexing/indexer.js`.
 ## Query Pipeline
 
 The public query path starts in `src/server.js`.
+
+Retrieval scoring combines two signals:
+
+- `keyword_score`: direct overlap between normalized query tokens and chunk text.
+- `vector_score`: each token is hashed into one of 128 fixed buckets, the bucket counts are normalized into a vector, and query/chunk vectors are compared with cosine similarity. This is a lightweight local similarity signal, not a neural embedding model. Hash collisions are possible, so it is blended with direct keyword evidence instead of used alone.
 
 ## Evaluation and Tests
 

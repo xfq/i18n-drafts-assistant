@@ -27,6 +27,8 @@ export function retrieve({
       ].join(' ');
       const keywordStats = keywordMatchStats(queryTokens, searchable);
       const keyword = keywordStats.score;
+      // Hash-bucket vector similarity catches broader token overlap while the
+      // keyword gate below keeps weak accidental hash collisions from ranking.
       const vector = cosineSimilarity(queryVector, hashedVector(tokenize(searchable)));
       const score = isMeaningfulCandidate(keywordStats) ? (keyword * 0.65) + (vector * 0.35) : 0;
 
