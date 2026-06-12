@@ -7,6 +7,7 @@
     "start": "node src/server.js",
     "dev": "node src/server.js",
     "test": "node --test tests/*.test.js",
+    "coverage": "node --test --experimental-test-coverage --test-coverage-include='src/**/*.js' --test-coverage-include='public/**/*.js' tests/*.test.js",
     "index": "node src/indexing/indexer.js",
     "rag:index": "node src/indexing/indexer.js",
     "eval": "node src/evals/run.js"
