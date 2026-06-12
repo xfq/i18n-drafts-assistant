@@ -105,7 +105,3 @@ The prototype stores JSON in `.data/index.json`:
 - `index_runs`: source mode, ref, commit, counts, warnings, and errors.
 
 Query logs are JSONL at `.data/query-log.jsonl` and store question text, selected language, filters, retrieved source ids, evidence status, latency, and error type. They do not store API keys or account identifiers.
-
-## Notes
-
-The implementation is dependency-free to make clean checkout setup reliable. Hybrid retrieval combines keyword scoring with deterministic hashed-vector similarity. This keeps the retrieval pipeline inspectable and replaceable by provider-backed embeddings later.
