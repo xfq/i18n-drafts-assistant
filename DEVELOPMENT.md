@@ -68,6 +68,10 @@ Run the full test suite with:
 npm test
 ```
 
+## Pull Request Previews
+
+Maintainers can add the `render-preview` label to a pull request to render the PR preview. The preview UI displays a bottom notice when it is running from a pull request preview environment.
+
 ## Change Guidelines
 
 - Keep source ingestion, retrieval, and generation boundaries explicit. Avoid making `POST /api/ask` read or fetch source files.
