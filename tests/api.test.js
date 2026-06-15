@@ -36,6 +36,7 @@ test('HTTP API serves health, retrieval, and cited answers without fetching sour
   try {
     const health = await fetch(`http://127.0.0.1:${port}/api/health`).then((response) => response.json());
     assert.equal(health.ok, true);
+    assert.equal(health.is_pull_request, false);
     assert.equal(health.indexed_documents, 4);
 
     const markdownModule = await fetch(`http://127.0.0.1:${port}/markdown.js`);
@@ -92,6 +93,35 @@ test('HTTP API preserves expected API error status codes', async () => {
     assert.equal(response.status, 503);
     assert.equal(body.evidence_status, 'error');
     assert.match(body.error, /No search index is available/);
+  } finally {
+    app.close();
+  }
+});
+
+test('HTTP API exposes whether the app is running as a pull request preview', async () => {
+  const app = createServer({
+    index: null,
+    config: {
+      enableDebug: true,
+      modelProvider: 'local',
+      publicBaseUrl: 'https://www.w3.org/International',
+      sourceMode: 'local',
+      sourceRef: 'fixture',
+      sourceRepoUrl: '',
+      sourceCommit: 'fixture-sha',
+      isPullRequest: true,
+      rateLimitWindowMs: 60_000,
+      rateLimitMax: 20
+    }
+  });
+  app.listen(0, '127.0.0.1');
+  await once(app, 'listening');
+  const { port } = app.address();
+
+  try {
+    const health = await fetch(`http://127.0.0.1:${port}/api/health`).then((response) => response.json());
+
+    assert.equal(health.is_pull_request, true);
   } finally {
     app.close();
   }

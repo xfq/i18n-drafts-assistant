@@ -125,6 +125,7 @@ function healthPayload(index, config) {
     source_repo_url: config.sourceRepoUrl,
     source_ref: index?.source?.ref || config.sourceRef,
     source_commit: index?.source?.commit || config.sourceCommit || '',
+    is_pull_request: Boolean(config.isPullRequest),
     indexed_documents: index?.documents?.length || 0,
     indexed_chunks: index?.chunks?.length || 0,
     last_indexed_at: index?.summary?.finished_at || null

@@ -6,6 +6,7 @@ const warningsEl = typeof document === 'undefined' ? null : document.querySelect
 const answerEl = typeof document === 'undefined' ? null : document.querySelector('#answer');
 const citationsEl = typeof document === 'undefined' ? null : document.querySelector('#citations');
 const healthStatus = typeof document === 'undefined' ? null : document.querySelector('#health-status');
+const previewNotice = typeof document === 'undefined' ? null : document.querySelector('#preview-notice');
 const submitLabel = submitButton?.textContent || 'Ask from sources';
 
 if (form) {
@@ -36,6 +37,10 @@ function validateQuestion() {
 async function loadHealth() {
   try {
     const health = await fetchJson('/api/health');
+    if (previewNotice) {
+      previewNotice.hidden = !health.is_pull_request;
+      document.body.classList.toggle('has-preview-notice', Boolean(health.is_pull_request));
+    }
     healthStatus.textContent = health.ok
       ? `Indexed ${health.indexed_documents} documents and ${health.indexed_chunks} chunks from ${health.source_ref}${health.source_commit ? ` (${health.source_commit.slice(0, 8)})` : ''}.`
       : 'No index is loaded. Run npm run index before asking questions.';
