@@ -26,6 +26,7 @@ export function getConfig(overrides = {}) {
     databaseUrl: firstDefined(overrides.databaseUrl, env.DATABASE_URL, '.data/index.json'),
     enableDebug: parseBoolean(overrides.enableDebug ?? env.ENABLE_DEBUG ?? false),
     adminToken: firstDefined(overrides.adminToken, env.ADMIN_TOKEN, ''),
+    isPullRequest: parseBoolean(overrides.isPullRequest ?? env.IS_PULL_REQUEST ?? false),
     rateLimitWindowMs: Number(firstDefined(overrides.rateLimitWindowMs, env.RATE_LIMIT_WINDOW_MS, 60_000)),
     rateLimitMax: Number(firstDefined(overrides.rateLimitMax, env.RATE_LIMIT_MAX, 30)),
     trustedProxies: parseList(firstDefined(overrides.trustedProxies, env.TRUSTED_PROXIES, ''))

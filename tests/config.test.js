@@ -15,6 +15,7 @@ const touchedKeys = [
   'MODEL_PROVIDER',
   'MODEL_API_KEY',
   'MODEL_TIMEOUT_MS',
+  'IS_PULL_REQUEST',
   'TRUSTED_PROXIES'
 ];
 
@@ -29,6 +30,7 @@ test('getConfig loads values from a .env file', async () => {
     'MODEL_PROVIDER=openai-compatible',
     'MODEL_API_KEY=server-side-secret',
     'MODEL_TIMEOUT_MS=12345',
+    'IS_PULL_REQUEST=true',
     'TRUSTED_PROXIES=127.0.0.1/32, ::1'
   ].join('\n'));
 
@@ -43,6 +45,7 @@ test('getConfig loads values from a .env file', async () => {
     assert.equal(config.modelProvider, 'openai-compatible');
     assert.equal(config.modelApiKey, 'server-side-secret');
     assert.equal(config.modelTimeoutMs, 12345);
+    assert.equal(config.isPullRequest, true);
     assert.deepEqual(config.trustedProxies, ['127.0.0.1/32', '::1']);
   });
 });

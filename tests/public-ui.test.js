@@ -35,3 +35,16 @@ test('project notice uses a shorter centered max width', async () => {
   assert.match(css, /\.project-notice\s*{[^}]*inline-size:\s*min\(calc\(100% - 2rem\), 860px\);/s);
   assert.doesNotMatch(css, /\.project-notice\s*{[^}]*inline-size:\s*min\(calc\(100% - 2rem\), 1080px\);/s);
 });
+
+test('public UI includes a bottom notice for pull request previews', async () => {
+  const [page, css, app] = await Promise.all([
+    readFile(new URL('../public/index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../public/styles.css', import.meta.url), 'utf8'),
+    readFile(new URL('../public/app.js', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(page, /<footer id="preview-notice" class="preview-notice" hidden>/);
+  assert.match(page, /This is a PR preview\./);
+  assert.match(css, /\.preview-notice\s*{[^}]*position:\s*fixed;[^}]*inset-block-end:\s*0;/s);
+  assert.match(app, /previewNotice\.hidden\s*=\s*!health\.is_pull_request;/);
+});
