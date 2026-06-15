@@ -36,6 +36,14 @@ test('project notice uses a shorter centered max width', async () => {
   assert.doesNotMatch(css, /\.project-notice\s*{[^}]*inline-size:\s*min\(calc\(100% - 2rem\), 1080px\);/s);
 });
 
+test('answer citation references use lighter type with micro spacing', async () => {
+  const css = await readFile(new URL('../public/styles.css', import.meta.url), 'utf8');
+  const citationRefRule = css.match(/\.answer-text \.citation-ref\s*{(?<body>[^}]*)}/s)?.groups.body || '';
+
+  assert.match(citationRefRule, /font-weight:\s*620;/);
+  assert.match(citationRefRule, /letter-spacing:\s*0\.02em;/);
+});
+
 test('public UI includes a bottom notice for pull request previews', async () => {
   const [page, css, app] = await Promise.all([
     readFile(new URL('../public/index.html', import.meta.url), 'utf8'),
