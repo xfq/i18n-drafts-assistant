@@ -514,11 +514,14 @@ button:disabled {
   min-block-size: 1.45rem;
   border: 1px solid color-mix(in oklab, var(--accent) 25%, var(--border));
   border-radius: 999px;
-  padding-inline: 0.35rem;
+  padding-inline: 0.38rem;
   background: var(--accent-soft);
   font-size: 0.78em;
-  font-weight: 780;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
   line-height: 1;
+  text-box: trim-both cap alphabetic;
   text-decoration: none;
   vertical-align: 0.08em;
 }
