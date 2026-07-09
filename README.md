@@ -179,7 +179,9 @@ Errors use a stable object:
 {
   "error": {
     "code": "index_unavailable",
-    "message": "No search index is available. Run npm run index first."
+    "message": "No search index is available. Run npm run index first.",
+    "language": "en",
+    "direction": "ltr"
   },
   "index": {
     "source_ref": "gh-pages",
@@ -187,6 +189,8 @@ Errors use a stable object:
   }
 }
 ```
+
+`error.language` is the BCP 47 language tag for `error.message`; `error.direction` is the message text direction (`ltr` or `rtl`), so messages such as Arabic can be rendered correctly.
 
 CORS is enabled for the community API. The same in-memory rate limiter applies to all `/api/` routes.
 

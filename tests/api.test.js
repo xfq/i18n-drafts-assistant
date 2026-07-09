@@ -157,11 +157,15 @@ test('community API returns stable error objects', async () => {
     const missingQueryBody = await missingQuery.json();
     assert.equal(missingQuery.status, 400);
     assert.equal(missingQueryBody.error.code, 'missing_query');
+    assert.equal(missingQueryBody.error.language, 'en');
+    assert.equal(missingQueryBody.error.direction, 'ltr');
 
     const noIndex = await fetch(`http://127.0.0.1:${port}/api/v1/search?q=utf-8`);
     const noIndexBody = await noIndex.json();
     assert.equal(noIndex.status, 503);
     assert.equal(noIndexBody.error.code, 'index_unavailable');
+    assert.equal(noIndexBody.error.language, 'en');
+    assert.equal(noIndexBody.error.direction, 'ltr');
 
     const invalidJson = await fetch(`http://127.0.0.1:${port}/api/v1/answer`, {
       method: 'POST',
@@ -171,6 +175,8 @@ test('community API returns stable error objects', async () => {
     const invalidJsonBody = await invalidJson.json();
     assert.equal(invalidJson.status, 400);
     assert.equal(invalidJsonBody.error.code, 'bad_request');
+    assert.equal(invalidJsonBody.error.language, 'en');
+    assert.equal(invalidJsonBody.error.direction, 'ltr');
   } finally {
     app.close();
   }
@@ -194,6 +200,8 @@ test('community API rate limit errors use the community envelope', async () => {
     assert.equal(limited.status, 429);
     assert.equal(limited.headers.get('access-control-allow-origin'), '*');
     assert.equal(body.error.code, 'rate_limit_exceeded');
+    assert.equal(body.error.language, 'en');
+    assert.equal(body.error.direction, 'ltr');
   } finally {
     app.close();
   }

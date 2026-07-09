@@ -6,6 +6,8 @@ const DEFAULT_SEARCH_LIMIT = 5;
 const DEFAULT_ANSWER_LIMIT = 8;
 const MAX_LIMIT = 20;
 const SNIPPET_LENGTH = 500;
+const DEFAULT_ERROR_LANGUAGE = 'en';
+const DEFAULT_ERROR_DIRECTION = 'ltr';
 
 export function isCommunityApiPath(pathname = '') {
   return pathname === '/api/openapi.json' ||
@@ -85,10 +87,14 @@ export function communityAnswerPayload({ question, language, answer, index, conf
 }
 
 export function communityErrorPayload(error, index, config) {
+  const message = error?.message || 'Unexpected API error.';
+  const language = normalizeErrorMessageLanguage(error);
   return {
     error: {
-      code: error.publicApiCode || errorCodeForStatus(error.statusCode),
-      message: error.message || 'Unexpected API error.'
+      code: error?.publicApiCode || errorCodeForStatus(error?.statusCode),
+      message,
+      language,
+      direction: normalizeTextDirection(error?.messageDirection || error?.direction)
     },
     index: communityIndexPayload(index, config)
   };
@@ -100,10 +106,12 @@ export function assertCommunityIndexReady(index) {
   }
 }
 
-export function publicApiError(statusCode, code, message) {
+export function publicApiError(statusCode, code, message, options = {}) {
   const error = new Error(message);
   error.statusCode = statusCode;
   error.publicApiCode = code;
+  error.messageLanguage = normalizeLanguage(options.language || options.messageLanguage);
+  error.messageDirection = normalizeTextDirection(options.direction || options.messageDirection);
   return error;
 }
 
@@ -287,9 +295,19 @@ export function openApiDocument() {
           properties: {
             error: {
               type: 'object',
+              required: ['code', 'message', 'language', 'direction'],
               properties: {
                 code: { type: 'string' },
-                message: { type: 'string' }
+                message: { type: 'string' },
+                language: {
+                  type: 'string',
+                  description: 'BCP 47 language tag for the error message text.'
+                },
+                direction: {
+                  type: 'string',
+                  enum: ['ltr', 'rtl'],
+                  description: 'Text direction for rendering the error message text.'
+                }
               }
             },
             index: { $ref: '#/components/schemas/IndexSummary' }
@@ -371,6 +389,16 @@ function publicCitation(citation) {
 
 function normalizeLanguage(language) {
   return String(language || 'en').trim().toLowerCase() || 'en';
+}
+
+function normalizeErrorMessageLanguage(error) {
+  return normalizeLanguage(error?.messageLanguage || error?.language || DEFAULT_ERROR_LANGUAGE);
+}
+
+function normalizeTextDirection(direction) {
+  const normalized = String(direction || '').trim().toLowerCase();
+  if (normalized === 'ltr' || normalized === 'rtl') return normalized;
+  return DEFAULT_ERROR_DIRECTION;
 }
 
 function parseStatuses(values) {
