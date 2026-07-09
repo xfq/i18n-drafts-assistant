@@ -33,6 +33,7 @@ The browser receives the files in `public/` directly from the Node server.
 ## Directory Map
 
 - `src/server.js`: HTTP server, static file serving, API routing, in-memory index lifecycle, rate limiting, and admin reindex endpoint.
+- `src/api/`: public API request parsing.
 - `src/config.js`: `.env` parsing and runtime configuration assembly.
 - `src/db/store.js`: JSON index persistence and JSONL query logging.
 - `src/indexing/`: source sync, content discovery, HTML parsing,
@@ -52,7 +53,21 @@ The indexer entry point is `runIndexer()` in `src/indexing/indexer.js`.
 
 ## Query Pipeline
 
-The public query path starts in `src/server.js`.
+The query path starts in `src/server.js`. The versioned community API lives under `/api/v1` and uses `src/api/community.js` to keep the public contract separate from internal debug/UI endpoints.
+
+Public community endpoints:
+
+- `GET /api/v1/health`: versioned index status.
+- `GET /api/v1/search`: stable search results with snippets.
+- `POST /api/v1/answer`: cited answers without debug payloads.
+- `GET /api/openapi.json`: OpenAPI 3.1 description for community callers.
+
+Internal endpoints:
+
+- `GET /api/health`: browser UI health status.
+- `POST /api/retrieve`: debug retrieval output.
+- `POST /api/ask`: browser UI answer endpoint.
+- `POST /api/admin/reindex`: token-protected reindex endpoint.
 
 Retrieval scoring combines two signals:
 
@@ -83,6 +98,7 @@ Maintainers can add the `render-preview` label to a pull request to render the P
 - Keep source ingestion, retrieval, and generation boundaries explicit. Avoid making `POST /api/ask` read or fetch source files.
 - If index shape changes, update parser/chunker tests, API tests, eval expectations, and this file.
 - If retrieval scoring changes, update retrieval tests and eval cases with the intended ranking behavior.
+- If the community API contract changes, update API tests, README examples, and `/api/openapi.json` generation together.
 - If a new environment variable is added, update `src/config.js`, `.env.example`, `README.md` if user-facing, and this file.
 - If security behavior changes, add or update tests.
 - Treat `.cache/`, `.data/`, `.env`, and `node_modules/` as local-only ignored state.

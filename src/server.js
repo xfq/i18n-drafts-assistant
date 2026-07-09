@@ -8,19 +8,53 @@ import { retrieve } from './retrieval/hybrid.js';
 import { answerFromRetrieval } from './generation/answer.js';
 import { runIndexer } from './indexing/indexer.js';
 import { createRateLimiter } from './rate-limit.js';
+import {
+  assertCommunityIndexReady,
+  communityAnswerPayload,
+  communityCorsHeaders,
+  communityErrorPayload,
+  communityHealthPayload,
+  communitySearchPayload,
+  isCommunityApiPath,
+  openApiDocument,
+  parseCommunityAnswerRequest,
+  parseCommunitySearchRequest,
+  publicApiError
+} from './api/community.js';
 
 const PUBLIC_DIR = new URL('../public/', import.meta.url).pathname;
 
 export function createServer({ index = null, config = getConfig() } = {}) {
   const rateLimiter = createRateLimiter(config.rateLimitWindowMs, config.rateLimitMax, {
-    trustedProxies: config.trustedProxies
+    trustedProxies: config.trustedProxies,
+    sendLimitExceeded: (limitedRequest, limitedResponse) => {
+      const limitedUrl = new URL(limitedRequest.url, `http://${limitedRequest.headers.host || 'localhost'}`);
+      if (isCommunityApiPath(limitedUrl.pathname)) {
+        sendJson(
+          limitedResponse,
+          429,
+          communityErrorPayload(publicApiError(429, 'rate_limit_exceeded', 'Rate limit exceeded.'), index, config),
+          communityCorsHeaders()
+        );
+        return;
+      }
+
+      sendJson(limitedResponse, 429, { evidence_status: 'error', error: 'Rate limit exceeded.' });
+    }
   });
 
   return http.createServer(async (request, response) => {
+    let url;
     try {
-      const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
+      url = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
 
       if (url.pathname.startsWith('/api/')) {
+        if (request.method === 'OPTIONS' && isCommunityApiPath(url.pathname)) {
+          response.writeHead(204, communityCorsHeaders());
+          response.end();
+          return;
+        }
+
         if (!rateLimiter(request, response)) return;
         await handleApi({ request, response, url, index, config });
         return;
@@ -28,15 +62,92 @@ export function createServer({ index = null, config = getConfig() } = {}) {
 
       await serveStatic(request, response, url);
     } catch (error) {
-      sendJson(response, httpErrorStatus(error), {
-        evidence_status: 'error',
-        error: error.message
-      });
+      if (url && isCommunityApiPath(url.pathname)) {
+        sendJson(response, httpErrorStatus(error), communityErrorPayload(error, index, config), communityCorsHeaders());
+      } else {
+        sendJson(response, httpErrorStatus(error), {
+          evidence_status: 'error',
+          error: error.message
+        });
+      }
     }
   });
 }
 
 async function handleApi({ request, response, url, index, config }) {
+  if (request.method === 'GET' && url.pathname === '/api/openapi.json') {
+    sendJson(response, 200, openApiDocument(), communityCorsHeaders());
+    return;
+  }
+
+  if (request.method === 'GET' && url.pathname === '/api/v1/health') {
+    sendJson(response, 200, communityHealthPayload(index, config), communityCorsHeaders());
+    return;
+  }
+
+  if (request.method === 'GET' && url.pathname === '/api/v1/search') {
+    const searchRequest = parseCommunitySearchRequest(url);
+    assertCommunityIndexReady(index);
+    const retrieval = retrieve({
+      query: searchRequest.query,
+      language: searchRequest.language,
+      statuses: searchRequest.statuses,
+      includeObsolete: searchRequest.includeObsolete,
+      chunks: index.chunks,
+      limit: searchRequest.limit
+    });
+    sendJson(response, 200, communitySearchPayload({ retrieval, index, config }), communityCorsHeaders());
+    return;
+  }
+
+  if (request.method === 'POST' && url.pathname === '/api/v1/answer') {
+    const started = Date.now();
+    const answerRequest = parseCommunityAnswerRequest(await readJson(request));
+    assertCommunityIndexReady(index);
+    const retrieval = retrieve({
+      query: answerRequest.question,
+      language: answerRequest.language,
+      statuses: answerRequest.statuses,
+      includeObsolete: answerRequest.includeObsolete,
+      chunks: index.chunks,
+      limit: answerRequest.limit
+    });
+    const answer = await answerFromRetrieval({
+      question: answerRequest.question,
+      language: answerRequest.language,
+      retrieval,
+      enableDebug: false,
+      modelProvider: config.modelProvider,
+      modelApiKey: config.modelApiKey,
+      modelBaseUrl: config.modelBaseUrl,
+      generationModel: config.generationModel,
+      modelTimeoutMs: config.modelTimeoutMs
+    });
+
+    appendQueryLog({
+      question: answerRequest.question,
+      language: answerRequest.language,
+      statuses: answerRequest.statuses,
+      retrieved_source_ids: retrieval.results.map((chunk) => chunk.chunk_id),
+      evidence_status: answer.evidence_status,
+      latency_ms: Date.now() - started,
+      error_type: answer.evidence_status === 'error' ? 'generation' : ''
+    }, config.queryLogPath).catch(() => {});
+
+    if (answer.evidence_status === 'error') {
+      throw publicApiError(502, 'generation_error', answer.error || 'Answer generation failed.');
+    }
+
+    sendJson(response, 200, communityAnswerPayload({
+      question: answerRequest.question,
+      language: answerRequest.language,
+      answer,
+      index,
+      config
+    }), communityCorsHeaders());
+    return;
+  }
+
   if (request.method === 'GET' && url.pathname === '/api/health') {
     sendJson(response, 200, healthPayload(index, config));
     return;
@@ -115,6 +226,10 @@ async function handleApi({ request, response, url, index, config }) {
     return;
   }
 
+  if (isCommunityApiPath(url.pathname)) {
+    throw publicApiError(404, 'not_found', 'Not found.');
+  }
+
   sendJson(response, 404, { error: 'Not found.' });
 }
 
@@ -171,16 +286,29 @@ async function readJson(request) {
   let size = 0;
   for await (const chunk of request) {
     size += chunk.length;
-    if (size > 16_384) throw new Error('Request body is too large.');
+    if (size > 16_384) {
+      const error = new Error('Request body is too large.');
+      error.statusCode = 413;
+      throw error;
+    }
     chunks.push(chunk);
   }
-  return chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {};
+  if (!chunks.length) return {};
+
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  } catch {
+    const error = new Error('Request body must be valid JSON.');
+    error.statusCode = 400;
+    throw error;
+  }
 }
 
-function sendJson(response, statusCode, body) {
+function sendJson(response, statusCode, body, headers = {}) {
   response.writeHead(statusCode, {
     'content-type': 'application/json; charset=utf-8',
-    'cache-control': 'no-store'
+    'cache-control': 'no-store',
+    ...headers
   });
   response.end(JSON.stringify(body));
 }

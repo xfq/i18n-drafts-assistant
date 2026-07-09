@@ -89,14 +89,113 @@ npm run index -- --source-mode=local --source-repo-path=tests/fixtures/i18n-mini
 npm run eval
 ```
 
-## API
+## Community API
+
+The stable community API is versioned under `/api/v1`. It uses the latest loaded index only; answer and search requests do not clone or fetch sources.
+
+OpenAPI documentation is available at:
+
+```sh
+curl http://127.0.0.1:3000/api/openapi.json
+```
+
+Search indexed source sections:
+
+```sh
+curl "http://127.0.0.1:3000/api/v1/search?q=declare%20UTF-8&language=en&status=published&limit=5"
+```
+
+Search returns ranked snippets, not full debug chunks:
+
+```json
+{
+  "query": "declare UTF-8",
+  "results": [
+    {
+      "id": "articles/http-charset/index.en.html#charset",
+      "rank": 1,
+      "score": 1.23,
+      "title": "Declaring character encodings in HTML",
+      "url": "https://www.w3.org/International/articles/http-charset/#charset",
+      "language": "en",
+      "status": "published",
+      "translation_state": "current",
+      "snippet": "For HTML pages, use UTF-8..."
+    }
+  ],
+  "index": {
+    "source_ref": "gh-pages",
+    "source_commit": "..."
+  }
+}
+```
+
+Answer a question with citations:
+
+```sh
+curl -X POST http://127.0.0.1:3000/api/v1/answer \
+  -H "content-type: application/json" \
+  -d '{"question":"How should I declare UTF-8 character encoding?","language":"en","statuses":["published"]}'
+```
+
+Answer responses have this shape:
+
+```json
+{
+  "question": "How should I declare UTF-8 character encoding?",
+  "language": "en",
+  "evidence_status": "supported",
+  "answer": "... [1]",
+  "citations": [
+    {
+      "id": "articles/http-charset/index.en.html#charset",
+      "label": "Declaring character encodings in HTML: The charset parameter",
+      "url": "https://www.w3.org/International/articles/http-charset/#charset",
+      "language": "en",
+      "status": "published",
+      "translation_state": "current",
+      "source_path": "articles/http-charset/index.en.html",
+      "rank": 1
+    }
+  ],
+  "warnings": [],
+  "index": {
+    "source_ref": "gh-pages",
+    "source_commit": "..."
+  }
+}
+```
+
+Supported filters:
+
+- `language`: preferred BCP 47 language tag, default `en`.
+- `status` or `statuses`: one or more of `published`, `review`, `draft`, `notreviewed`, `obsolete`.
+- `include_obsolete`: set to `true` to allow obsolete sources.
+- `limit`: maximum retrieval results, capped at `20`.
+
+Errors use a stable object:
+
+```json
+{
+  "error": {
+    "code": "index_unavailable",
+    "message": "No search index is available. Run npm run index first."
+  },
+  "index": {
+    "source_ref": "gh-pages",
+    "source_commit": "..."
+  }
+}
+```
+
+CORS is enabled for the community API. The same in-memory rate limiter applies to all `/api/` routes.
+
+## Internal API
 
 - `GET /api/health` returns source mode, ref, commit, and index counts.
 - `POST /api/retrieve` returns ranked source chunks for debug and development.
 - `POST /api/ask` returns `{ answer, citations, warnings, evidence_status, debug }`.
 - `POST /api/admin/reindex` is hidden unless `ADMIN_TOKEN` is set and must be called with `x-admin-token`.
-
-Public answer requests only use the latest loaded index. They do not clone or fetch sources.
 
 ## Data Model
 

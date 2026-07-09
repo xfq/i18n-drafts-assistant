@@ -6,6 +6,22 @@ import { createServer } from '../src/server.js';
 
 const fixtureRoot = new URL('./fixtures/i18n-mini/', import.meta.url).pathname;
 
+function fixtureConfig(overrides = {}) {
+  return {
+    enableDebug: true,
+    modelProvider: 'local',
+    publicBaseUrl: 'https://www.w3.org/International',
+    sourceMode: 'local',
+    sourceRef: 'fixture',
+    sourceRepoUrl: '',
+    sourceCommit: 'fixture-sha',
+    queryLogPath: '/private/tmp/i18n-drafts-assistant-api-test-query-log.jsonl',
+    rateLimitWindowMs: 60_000,
+    rateLimitMax: 20,
+    ...overrides
+  };
+}
+
 test('HTTP API serves health, retrieval, and cited answers without fetching sources on ask', async () => {
   const index = await buildIndex({
     sourceRoot: fixtureRoot,
@@ -58,6 +74,126 @@ test('HTTP API serves health, retrieval, and cited answers without fetching sour
     assert.equal(answer.evidence_status, 'supported');
     assert(answer.citations.length > 0);
     assert.equal(answer.debug.retrieved_after_ranking[0].source_path, 'articles/http-charset/index.en.html');
+  } finally {
+    app.close();
+  }
+});
+
+test('community API exposes versioned health, search, answer, and OpenAPI contracts', async () => {
+  const index = await buildIndex({
+    sourceRoot: fixtureRoot,
+    publicBaseUrl: 'https://www.w3.org/International',
+    sourceMode: 'local',
+    sourceRef: 'fixture',
+    sourceCommit: 'fixture-sha',
+    write: false
+  });
+  const app = createServer({
+    index,
+    config: fixtureConfig()
+  });
+  app.listen(0, '127.0.0.1');
+  await once(app, 'listening');
+  const { port } = app.address();
+
+  try {
+    const openApi = await fetch(`http://127.0.0.1:${port}/api/openapi.json`).then((response) => response.json());
+    assert.equal(openApi.openapi, '3.1.0');
+    assert(openApi.paths['/api/v1/search']);
+    assert(openApi.paths['/api/v1/answer']);
+
+    const healthResponse = await fetch(`http://127.0.0.1:${port}/api/v1/health`);
+    const health = await healthResponse.json();
+    assert.equal(healthResponse.headers.get('access-control-allow-origin'), '*');
+    assert.equal(health.api_version, 'v1');
+    assert.equal(health.index.indexed_documents, 4);
+
+    const searchResponse = await fetch(`http://127.0.0.1:${port}/api/v1/search?q=declare%20UTF-8&language=en&status=published&limit=2`);
+    const search = await searchResponse.json();
+    assert.equal(searchResponse.status, 200);
+    assert.equal(searchResponse.headers.get('access-control-allow-origin'), '*');
+    assert.equal(search.filters.language, 'en');
+    assert(search.results.length > 0);
+    assert(search.results.length <= 2);
+    assert.equal(search.results[0].source_path, 'articles/http-charset/index.en.html');
+    assert.match(search.results[0].snippet, /UTF-8/i);
+    assert.equal('text' in search.results[0], false);
+
+    const answerResponse = await fetch(`http://127.0.0.1:${port}/api/v1/answer`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question: 'How should I declare UTF-8 character encoding?', language: 'en', statuses: ['published'] })
+    });
+    const answer = await answerResponse.json();
+    assert.equal(answerResponse.status, 200);
+    assert.equal(answer.evidence_status, 'supported');
+    assert.match(answer.answer, /UTF-8/i);
+    assert(answer.citations.length > 0);
+    assert.equal(answer.citations[0].source_path, 'articles/http-charset/index.en.html');
+    assert.equal(answer.index.source_ref, 'fixture');
+    assert.equal('debug' in answer, false);
+
+    const optionsResponse = await fetch(`http://127.0.0.1:${port}/api/v1/answer`, {
+      method: 'OPTIONS'
+    });
+    assert.equal(optionsResponse.status, 204);
+    assert.equal(optionsResponse.headers.get('access-control-allow-methods'), 'GET, POST, OPTIONS');
+  } finally {
+    app.close();
+  }
+});
+
+test('community API returns stable error objects', async () => {
+  const app = createServer({
+    index: null,
+    config: fixtureConfig()
+  });
+  app.listen(0, '127.0.0.1');
+  await once(app, 'listening');
+  const { port } = app.address();
+
+  try {
+    const missingQuery = await fetch(`http://127.0.0.1:${port}/api/v1/search`);
+    const missingQueryBody = await missingQuery.json();
+    assert.equal(missingQuery.status, 400);
+    assert.equal(missingQueryBody.error.code, 'missing_query');
+
+    const noIndex = await fetch(`http://127.0.0.1:${port}/api/v1/search?q=utf-8`);
+    const noIndexBody = await noIndex.json();
+    assert.equal(noIndex.status, 503);
+    assert.equal(noIndexBody.error.code, 'index_unavailable');
+
+    const invalidJson = await fetch(`http://127.0.0.1:${port}/api/v1/answer`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{'
+    });
+    const invalidJsonBody = await invalidJson.json();
+    assert.equal(invalidJson.status, 400);
+    assert.equal(invalidJsonBody.error.code, 'bad_request');
+  } finally {
+    app.close();
+  }
+});
+
+test('community API rate limit errors use the community envelope', async () => {
+  const app = createServer({
+    index: null,
+    config: fixtureConfig({ rateLimitMax: 1 })
+  });
+  app.listen(0, '127.0.0.1');
+  await once(app, 'listening');
+  const { port } = app.address();
+
+  try {
+    const first = await fetch(`http://127.0.0.1:${port}/api/v1/health`);
+    const limited = await fetch(`http://127.0.0.1:${port}/api/v1/health`);
+    const body = await limited.json();
+
+    assert.equal(first.status, 200);
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get('access-control-allow-origin'), '*');
+    assert.equal(body.error.code, 'rate_limit_exceeded');
   } finally {
     app.close();
   }

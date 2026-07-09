@@ -1,6 +1,6 @@
 import { isIP } from 'node:net';
 
-export function createRateLimiter(windowMs, maxRequests, { trustedProxies = [] } = {}) {
+export function createRateLimiter(windowMs, maxRequests, { trustedProxies = [], sendLimitExceeded = sendRateLimitExceeded } = {}) {
   const buckets = new Map();
   const trustedProxyRanges = parseTrustedProxyRanges(trustedProxies);
 
@@ -16,14 +16,14 @@ export function createRateLimiter(windowMs, maxRequests, { trustedProxies = [] }
     buckets.set(key, bucket);
 
     if (bucket.count > maxRequests) {
-      sendRateLimitExceeded(response);
+      sendLimitExceeded(request, response);
       return false;
     }
     return true;
   };
 }
 
-function sendRateLimitExceeded(response) {
+function sendRateLimitExceeded(_request, response) {
   response.writeHead(429, {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store'
