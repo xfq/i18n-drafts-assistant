@@ -12,6 +12,12 @@ step. It has two main execution paths:
 
 Answers must be based only on indexed W3C Internationalization sources.
 
+## Framework Choice
+
+The project intentionally does not use a web framework. The current shape is a small static UI plus a Node HTTP API, so framework routing, component conventions, bundling, and server-side rendering would mostly add dependency and build complexity without solving a current problem.
+
+Keep this choice unless the product grows into a larger multi-page application, needs complex auth/session handling, server-side rendering, or a substantial client-side component system.
+
 ## Runtime
 
 - `package.json` sets `"type": "module"` and requires Node `24.x`.
