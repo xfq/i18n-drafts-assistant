@@ -206,3 +206,7 @@ The prototype stores JSON in `.data/index.json`:
 - `index_runs`: source mode, ref, commit, counts, warnings, and errors.
 
 Query logs are JSONL at `.data/query-log.jsonl` and store question text, selected language, filters, retrieved source ids, evidence status, latency, and error type. They do not store API keys or account identifiers.
+
+## License
+
+This project is licensed under the W3C Software and Document License - 2023 version. See `LICENSE`.

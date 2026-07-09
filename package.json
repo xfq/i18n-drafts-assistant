@@ -2,6 +2,7 @@
   "name": "i18n-drafts-assistant",
   "version": "0.1.0",
   "private": true,
+  "license": "See LICENSE in the project root for license information",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
