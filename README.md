@@ -1,10 +1,12 @@
 # Ask W3C i18n
 
+Ask W3C i18n answers questions about W3C Internationalization guidance with source-grounded citations and source status.
+
+<p align="center">
+  <a href="https://i18n-drafts-assistant.onrender.com/"><strong>Try it online</strong></a>
+</p>
+
 > **Unofficial project:** This is currently an unofficial project and is not an official W3C service.
-
-Public-facing AI assistant for W3C Internationalization content in the `w3c/i18n-drafts` repository.
-
-It indexes a local or cached `w3c/i18n-drafts` checkout, retrieves source chunks with metadata, and returns answers with mandatory citations and draft/review warnings.
 
 ## Run Locally
 
