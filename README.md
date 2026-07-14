@@ -96,13 +96,13 @@ The stable community API is versioned under `/api/v1`. It uses the latest loaded
 OpenAPI documentation is available at:
 
 ```sh
-curl http://127.0.0.1:3000/api/openapi.json
+curl https://i18n-drafts-assistant.onrender.com/api/openapi.json
 ```
 
 Search indexed source sections:
 
 ```sh
-curl "http://127.0.0.1:3000/api/v1/search?q=declare%20UTF-8&language=en&status=published&limit=5"
+curl "https://i18n-drafts-assistant.onrender.com/api/v1/search?q=declare%20UTF-8&language=en&status=published&limit=5"
 ```
 
 Search returns ranked snippets, not full debug chunks:
@@ -133,7 +133,7 @@ Search returns ranked snippets, not full debug chunks:
 Answer a question with citations:
 
 ```sh
-curl -X POST http://127.0.0.1:3000/api/v1/answer \
+curl -X POST https://i18n-drafts-assistant.onrender.com/api/v1/answer \
   -H "content-type: application/json" \
   -d '{"question":"How should I declare UTF-8 character encoding?","language":"en","statuses":["published"]}'
 ```
