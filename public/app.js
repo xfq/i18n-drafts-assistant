@@ -1,3 +1,5 @@
+import { highlightCode } from './syntax-highlight.js';
+
 const form = typeof document === 'undefined' ? null : document.querySelector('#ask-form');
 const questionField = form?.elements.namedItem('question') || null;
 const submitButton = typeof document === 'undefined' ? null : document.querySelector('#submit-button');
@@ -201,7 +203,8 @@ export function markdownToHtml(markdown) {
 
     const fence = lines[index].match(/^```([A-Za-z0-9_-]+)?\s*$/);
     if (fence) {
-      const language = fence[1] ? ` class="language-${escapeAttribute(fence[1])}"` : '';
+      const languageName = fence[1] ? fence[1].toLowerCase() : '';
+      const language = languageName ? ` class="language-${escapeAttribute(languageName)}"` : '';
       const codeLines = [];
       index += 1;
       while (index < lines.length && !/^```\s*$/.test(lines[index])) {
@@ -209,7 +212,7 @@ export function markdownToHtml(markdown) {
         index += 1;
       }
       if (index < lines.length) index += 1;
-      blocks.push(`<pre><code${language}>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+      blocks.push(`<pre><code${language}>${highlightCode(codeLines.join('\n'), languageName)}</code></pre>`);
       continue;
     }
 

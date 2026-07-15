@@ -506,6 +506,41 @@ button:disabled {
   font: inherit;
 }
 
+.answer-text pre .token.comment,
+.answer-text pre .token.doctype,
+.answer-text pre .token.cdata {
+  color: oklch(76% 0.025 248);
+}
+
+.answer-text pre .token.punctuation {
+  color: oklch(84% 0.04 248);
+}
+
+.answer-text pre .token.tag-name,
+.answer-text pre .token.selector,
+.answer-text pre .token.atrule {
+  color: oklch(82% 0.12 205);
+}
+
+.answer-text pre .token.attr-name,
+.answer-text pre .token.property {
+  color: oklch(84% 0.13 92);
+}
+
+.answer-text pre .token.attr-value,
+.answer-text pre .token.string {
+  color: oklch(84% 0.12 150);
+}
+
+.answer-text pre .token.number,
+.answer-text pre .token.color {
+  color: oklch(84% 0.12 35);
+}
+
+.answer-text pre .token.function {
+  color: oklch(84% 0.1 300);
+}
+
 .answer-text .citation-ref {
   display: inline-flex;
   align-items: center;
