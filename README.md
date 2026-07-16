@@ -13,6 +13,8 @@ Ask W3C i18n answers questions about W3C Internationalization guidance with sour
 - How should I declare UTF-8 character encoding in HTML?
 - How should I set the language of the content in my HTML page?
 - What are character sets?
+- What is the byte-order mark?
+- What is ruby?
 - What does the i18n WG do?
 
 ## Run Locally
