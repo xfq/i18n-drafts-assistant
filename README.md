@@ -16,6 +16,7 @@ Ask W3C i18n answers questions about W3C Internationalization guidance with sour
 - What is the byte-order mark?
 - What is ruby?
 - What does the i18n WG do?
+- When HTTP Content-Type, BOM, and `<meta charset>` disagree, which encoding wins?
 
 ## Run Locally
 
