@@ -76,6 +76,17 @@ Retrieval scoring combines two signals:
 
 The project does not currently use a vector database. The indexed corpus is small enough to load into memory and scan directly, and the current retrieval goals favor deterministic ranking over semantic nearest-neighbor recall. A vector database would add operational complexity, embedding generation, and model-version sensitivity without solving a current scaling problem. Revisit this choice if the corpus grows large enough that in-memory scanning becomes slow.
 
+## External Model and Prompt Injection Protection
+
+`MODEL_PROVIDER=local` uses the deterministic extractive answerer and does not send prompts to a model provider.
+
+When `MODEL_PROVIDER=openai-compatible` is enabled, the project reduces prompt injection risk through the following controls:
+
+- The model receives only the four highest-ranked retrieved chunks, not the complete index or source repository. A request with no sufficiently relevant result returns `insufficient_evidence` without calling the model.
+- Answer requests use the already-loaded index. They do not fetch web pages, clone repositories, or read source files.
+
+These controls reduce exposure and constrain the effect of an injection, but they do not guarantee prevention. Retrieved `chunk.text` is currently included verbatim in the user message. There is no dedicated injection classifier, instruction stripping, semantic claim-to-citation verification, or structured output enforcement. Citation validation checks citation references and their mapping, not whether every generated claim is actually supported by the cited text.
+
 ## Evaluation and Tests
 
 Use the fixture corpus for deterministic local development:
