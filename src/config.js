@@ -59,7 +59,8 @@ function parseSources(overrides, env) {
       repoPath: firstDefined(overrides.sourceRepoPath, env.SOURCE_REPO_PATH, ''),
       publicBaseUrl: firstDefined(overrides.publicBaseUrl, env.PUBLIC_BASE_URL, 'https://www.w3.org/International'),
       contentRoots: null,
-      requireMetadata: true
+      requireMetadata: true,
+      statusOverride: ''
     }
   ];
 }
@@ -79,7 +80,8 @@ function normalizeSource(source, index) {
       ? (source.contentRoots || source.content_roots)
       : null,
     requireMetadata,
-    defaultStatus: source.defaultStatus || source.default_status || (requireMetadata ? '' : 'published')
+    defaultStatus: source.defaultStatus || source.default_status || (requireMetadata ? '' : 'published'),
+    statusOverride: source.statusOverride || source.status_override || ''
   };
 }
 

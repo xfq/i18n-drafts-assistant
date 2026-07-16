@@ -11,7 +11,8 @@ export function parseHtmlPage({
   sourceMode = 'local',
   sourceRef = '',
   sourceCommit = '',
-  defaultStatus = ''
+  defaultStatus = '',
+  statusOverride = ''
 }) {
   const f = extractFMetadata(html);
   const htmlLang = normalizeLanguage(firstMatch(html, /<html\b[^>]*\blang=["']?([^"'\s>]+)/i));
@@ -25,7 +26,9 @@ export function parseHtmlPage({
     firstMatch(html, /<meta\b[^>]*name=["']description["'][^>]*content=["']([^"']*)["'][^>]*>/i) ||
     firstMatch(html, /<meta\b[^>]*content=["']([^"']*)["'][^>]*name=["']description["'][^>]*>/i)
   );
-  const status = f.status ? normalizeStatus(f.status) : (defaultStatus || normalizeStatus(f.status));
+  const status = statusOverride
+    ? normalizeStatus(statusOverride)
+    : (f.status ? normalizeStatus(f.status) : (defaultStatus || normalizeStatus(f.status)));
   const canonicalUrl = canonicalUrlForSourcePath(sourcePath, publicBaseUrl);
   const text = htmlToCleanText(html);
   const indexedAt = new Date().toISOString();

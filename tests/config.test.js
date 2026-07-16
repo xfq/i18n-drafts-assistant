@@ -119,6 +119,24 @@ test('getConfig parses SOURCES JSON array and normalizes source entries', async 
   });
 });
 
+test('example configuration indexes the i18n activity group pages', async () => {
+  const envFilePath = new URL('../.env.example', import.meta.url).pathname;
+
+  await withCleanEnv(async () => {
+    const config = getConfig({ envFilePath });
+    const activitySource = config.sources.find((source) => source.id === 'i18n-activity');
+
+    assert(activitySource);
+    assert.equal(activitySource.repoUrl, 'https://github.com/w3c/i18n-activity.git');
+    assert.equal(activitySource.ref, 'gh-pages');
+    assert.equal(activitySource.publicBaseUrl, 'https://w3c.github.io/i18n-activity');
+    assert.deepEqual(activitySource.contentRoots, ['i18n-wg', 'i18n-ig']);
+    assert.equal(activitySource.requireMetadata, false);
+    assert.equal(activitySource.defaultStatus, 'published');
+    assert.equal(activitySource.statusOverride, 'published');
+  });
+});
+
 test('getConfig falls back to legacy single-source when SOURCES is not set', async () => {
   const envFilePath = await writeTempEnv('SOURCE_MODE=git\nSOURCE_REF=main\n');
 

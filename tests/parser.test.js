@@ -84,6 +84,19 @@ test('parseHtmlPage prefers f.status over defaultStatus', () => {
   assert.equal(parsed.status, 'published');
 });
 
+test('parseHtmlPage lets a source status override take precedence over page metadata', () => {
+  const html = '<html lang="en"><head><title>T</title></head><body><h1>T</h1><script>var f = { status: "notreviewed" };</script></body></html>';
+  const parsed = parseHtmlPage({
+    html,
+    sourcePath: 'index.en.html',
+    publicBaseUrl: 'https://example.com',
+    defaultStatus: 'draft',
+    statusOverride: 'published'
+  });
+
+  assert.equal(parsed.status, 'published');
+});
+
 test('isLikelyContentPage accepts pages without h1 when they have h2 or title and requireMetadata is false', () => {
   const withH2Only = '<html lang="en"><head><title>Spec Title</title></head><body><h2>Introduction</h2></body></html>';
   const withTitleOnly = '<html lang="en"><head><title>Spec Title</title></head><body><p>Content.</p></body></html>';

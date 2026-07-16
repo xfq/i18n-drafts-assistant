@@ -7,6 +7,7 @@ import { buildIndex } from '../src/indexing/indexer.js';
 
 const fixtureRoot = new URL('./fixtures/i18n-mini/', import.meta.url).pathname;
 const specdevRoot = new URL('./fixtures/specdev-mini/', import.meta.url).pathname;
+const activityRoot = new URL('./fixtures/i18n-activity-mini/', import.meta.url).pathname;
 
 test('content discovery indexes primary content roots and skips support data HTML', async () => {
   const files = await discoverContentFiles(fixtureRoot);
@@ -111,6 +112,30 @@ test('discovery with custom contentRoots and requireMetadata finds specdev pages
 test('discovery with default contentRoots skips specdev root-level files', async () => {
   const files = await discoverContentFiles(specdevRoot);
   assert.equal(files.length, 0);
+});
+
+test('activity discovery indexes only the configured WG and IG folders', async () => {
+  const index = await buildIndex({
+    sourceRoot: activityRoot,
+    publicBaseUrl: 'https://w3c.github.io/i18n-activity',
+    sourceMode: 'local',
+    sourceRef: 'fixture',
+    sourceCommit: 'fixture-sha',
+    sourceId: 'i18n-activity',
+    contentRoots: ['i18n-wg', 'i18n-ig'],
+    requireMetadata: false,
+    defaultStatus: 'draft',
+    statusOverride: 'published',
+    write: false
+  });
+
+  assert.deepEqual(index.documents.map((document) => document.source_path), [
+    'i18n-ig/index.html',
+    'i18n-wg/index.html'
+  ]);
+  assert(index.documents.every((document) => document.source_id === 'i18n-activity'));
+  assert(index.documents.every((document) => document.status === 'published'));
+  assert(index.documents.every((document) => document.canonical_url.startsWith('https://w3c.github.io/i18n-activity/')));
 });
 
 test('indexer builds per-source index with source_id on documents and chunks', async () => {

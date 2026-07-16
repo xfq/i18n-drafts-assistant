@@ -59,6 +59,10 @@ Important defaults:
 - `MODEL_PROVIDER=local`
 - `TRUSTED_PROXIES=` (empty by default; forwarded client IP headers are ignored)
 
+The example `SOURCES` configuration enables multi-source indexing for `i18n-drafts`, `bp-i18n-specdev`, and `i18n-activity`. The `i18n-activity` source is limited to the `i18n-wg` and `i18n-ig` folders.
+
+`SOURCES` overrides the single-source `SOURCE_*` settings. To use only a local `i18n-drafts` checkout, remove or comment out `SOURCES` before setting `SOURCE_MODE=local` and `SOURCE_REPO_PATH`.
+
 `MODEL_PROVIDER=local` uses a deterministic extractive answerer over retrieved chunks. To use an external server-side model, set:
 
 ```sh
