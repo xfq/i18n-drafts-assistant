@@ -43,12 +43,23 @@ async function main() {
       if (!sourcePaths.has(sourcePath)) failures.push(`${testCase.question}: missing required source ${sourcePath}`);
     }
 
+    if (testCase.required_any_source_paths?.length > 0 && !testCase.required_any_source_paths.some((sourcePath) => sourcePaths.has(sourcePath))) {
+      failures.push(`${testCase.question}: missing one of required sources ${testCase.required_any_source_paths.join('|')}`);
+    }
+
     for (const sourcePath of testCase.disallowed_source_paths || []) {
       if (sourcePaths.has(sourcePath)) failures.push(`${testCase.question}: used disallowed source ${sourcePath}`);
     }
 
     for (const warningType of testCase.expected_warning_types || []) {
       if (!warningTypes.has(warningType)) failures.push(`${testCase.question}: missing warning ${warningType}`);
+    }
+
+    const normalizedAnswer = String(answer.answer || '').toLowerCase();
+    for (const expectedTerm of testCase.expected_answer_terms || []) {
+      if (!normalizedAnswer.includes(String(expectedTerm).toLowerCase())) {
+        failures.push(`${testCase.question}: answer missing expected term ${expectedTerm}`);
+      }
     }
   }
 

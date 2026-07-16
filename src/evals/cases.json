@@ -3,10 +3,15 @@
     "category": "character encoding",
     "question": "How should I declare UTF-8 character encoding in HTML?",
     "language": "en",
-    "required_source_paths": ["articles/http-charset/index.en.html"],
+    "required_source_paths": [],
+    "required_any_source_paths": [
+      "articles/http-charset/index.en.html",
+      "questions/qa-html-encoding-declarations.en.html"
+    ],
     "disallowed_source_paths": [],
     "expected_evidence_status": "supported",
     "expected_warning_types": [],
+    "expected_answer_terms": ["meta", "charset", "1024"],
     "notes": "Published English source should answer directly."
   },
   {

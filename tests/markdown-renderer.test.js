@@ -36,6 +36,14 @@ test('renders emphasis that contains inline code', () => {
   assert.equal(html.includes('**'), false);
 });
 
+test('renders grouped API citation references as links to each source', () => {
+  const html = markdownToHtml('Use the in-document declaration and keep the HTTP header consistent [1, 2].');
+
+  assert.match(html, /<a href="#citation-1" class="citation-ref" aria-label="Citation 1">\[1\]<\/a>/);
+  assert.match(html, /<a href="#citation-2" class="citation-ref" aria-label="Citation 2">\[2\]<\/a>/);
+  assert.doesNotMatch(html, /\[1, 2\]/);
+});
+
 test('highlights CSS selectors, properties, and values', () => {
   const html = markdownToHtml(`\`\`\`css
 .answer {

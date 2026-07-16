@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { answerFromRetrieval } from '../src/generation/answer.js';
 import { validateCitationsForEvidence } from '../src/generation/citations.js';
 import { buildPrompt } from '../src/generation/prompt.js';
+import { retrieve } from '../src/retrieval/hybrid.js';
 
 const reviewChunk = {
   chunk_id: 'questions/qa-link-lang.en.html#link-language',
@@ -123,7 +124,7 @@ test('citation validation keeps answer references aligned with returned citation
   assert.deepEqual(validated.citations.map((citation) => citation.chunk_id), ['source-3', 'source-4']);
 });
 
-test('answer generation exposes citations for every chunk shown to the model', async () => {
+test('local answer citations are limited to the evidence actually used', async () => {
   const response = await answerFromRetrieval({
     question: 'How should I declare UTF-8 character encoding in HTML?',
     language: 'en',
@@ -138,8 +139,8 @@ test('answer generation exposes citations for every chunk shown to the model', a
     modelProvider: 'local'
   });
 
-  assert.equal(response.citations.length, 4);
-  assert.equal(response.citations[3].chunk_id, 'source-4');
+  assert.equal(response.citations.length, 1);
+  assert.equal(response.citations[0].chunk_id, publishedChunk.chunk_id);
 });
 
 test('conflict questions with mixed published and review evidence are treated as partial', async () => {
@@ -153,4 +154,74 @@ test('conflict questions with mixed published and review evidence are treated as
   assert.equal(response.evidence_status, 'partially_supported');
   assert.match(response.answer, /could not confirm a direct conflict/i);
   assert(response.warnings.some((warning) => warning.type === 'uses_draft_or_review'));
+});
+
+test('local mode answers an HTML UTF-8 declaration question from the direct quick-answer section', async () => {
+  const repeatedEncodingTerms = 'UTF-8 character encoding declarations describe encoded characters and declare an encoding. '.repeat(12);
+  const chunks = [
+    {
+      chunk_id: 'questions/qa-html-encoding-declarations.en.html#quickanswer',
+      source_path: 'questions/qa-html-encoding-declarations.en.html',
+      section_url: 'https://www.w3.org/International/questions/qa-html-encoding-declarations#quickanswer',
+      title: 'Declaring character encodings in HTML',
+      heading_path: ['Quick answer'],
+      language: 'en',
+      status: 'published',
+      translation_state: 'current',
+      text: 'Quick answer Always declare the encoding of your document using a meta element with a charset attribute. The declaration should appear immediately after the opening head tag. <meta charset="utf-8"> You should always use the UTF-8 character encoding.'
+    },
+    {
+      chunk_id: 'questions/qa-byte-order-mark.en.html#answer',
+      source_path: 'questions/qa-byte-order-mark.en.html',
+      section_url: 'https://www.w3.org/International/questions/qa-byte-order-mark#answer',
+      title: 'The byte-order mark (BOM) in HTML',
+      heading_path: ['Answer'],
+      language: 'en',
+      status: 'published',
+      translation_state: 'current',
+      text: `Answer What is a byte-order mark? ${repeatedEncodingTerms}`
+    },
+    {
+      chunk_id: 'index.html#characters',
+      source_path: 'index.html',
+      section_url: 'https://www.w3.org/International/#characters',
+      title: 'Internationalization Best Practices for Spec Developers',
+      heading_path: ['Characters'],
+      language: 'en',
+      status: 'published',
+      translation_state: 'current',
+      text: `Characters Characters and character encoding basics. ${repeatedEncodingTerms}`
+    },
+    {
+      chunk_id: 'articles/unicode-migration/index.en.html#designing',
+      source_path: 'articles/unicode-migration/index.en.html',
+      section_url: 'https://www.w3.org/International/articles/unicode-migration/#designing',
+      title: 'Migrating to Unicode',
+      heading_path: ['Designing for Unicode'],
+      language: 'en',
+      status: 'published',
+      translation_state: 'current',
+      text: `Designing for Unicode Character encoding specifications. ${repeatedEncodingTerms}`
+    },
+    {
+      chunk_id: 'articles/unicode-migration/index.en.html#migrating',
+      source_path: 'articles/unicode-migration/index.en.html',
+      section_url: 'https://www.w3.org/International/articles/unicode-migration/#migrating',
+      title: 'Migrating to Unicode',
+      heading_path: ['Migrating Data'],
+      language: 'en',
+      status: 'published',
+      translation_state: 'current',
+      text: `Migrating Data Converting product data to Unicode. ${repeatedEncodingTerms}`
+    }
+  ];
+  const question = 'How should I declare UTF-8 character encoding in HTML?';
+  const retrieval = retrieve({ query: question, language: 'en', chunks, limit: 5 });
+  const response = await answerFromRetrieval({ question, language: 'en', retrieval, modelProvider: 'local' });
+
+  assert.equal(retrieval.results[0].chunk_id, 'questions/qa-html-encoding-declarations.en.html#quickanswer');
+  assert.match(response.answer, /always declare/i);
+  assert.match(response.answer, /opening head tag/i);
+  assert.match(response.answer, /<meta charset=["']utf-8["']>/i);
+  assert.doesNotMatch(response.answer, /byte-order mark|migrating data/i);
 });

@@ -166,3 +166,16 @@ test('retrieval does not leak published answers through excluded status filters'
 
   assert.equal(result.results.length, 0);
 });
+
+test('retrieval rejects related content that does not cover the full short-query concept', () => {
+  const result = retrieve({
+    query: 'How should I declare the language of an HTML page?',
+    language: 'en',
+    statuses: ['published', 'review', 'draft'],
+    includeObsolete: false,
+    chunks,
+    limit: 5
+  });
+
+  assert.equal(result.results.length, 0);
+});

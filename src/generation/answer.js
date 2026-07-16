@@ -16,7 +16,9 @@ export async function answerFromRetrieval({
   modelTimeoutMs = 30_000
 }) {
   const results = retrieval?.results || [];
-  const selectedChunks = results.slice(0, 4);
+  const localMode = modelProvider === 'local' || modelProvider === 'none';
+  const conflictIntent = asksAboutConflict(question);
+  const selectedChunks = localMode && !conflictIntent ? results.slice(0, 1) : results.slice(0, 4);
   const topScore = selectedChunks[0]?.score ?? 0;
 
   if (selectedChunks.length === 0 || topScore < 0.03) {
@@ -32,14 +34,14 @@ export async function answerFromRetrieval({
   const citations = buildCitations(selectedChunks);
   const warnings = buildWarnings(citations, language);
   const prompt = buildPrompt({ question, language, chunks: selectedChunks });
-  const conflictQuestion = asksAboutConflict(question) && hasMixedPublishedAndProvisional(citations);
+  const conflictQuestion = conflictIntent && hasMixedPublishedAndProvisional(citations);
   let answer;
 
   try {
     if (conflictQuestion) {
       answer = localConflictAnswer(selectedChunks, citations);
-    } else if (modelProvider === 'local' || modelProvider === 'none') {
-      answer = localExtractiveAnswer(selectedChunks, citations);
+    } else if (localMode) {
+      answer = localExtractiveAnswer(question, selectedChunks, citations);
     } else {
       const generated = await generateWithModel({
         provider: modelProvider,
@@ -49,7 +51,7 @@ export async function answerFromRetrieval({
         model: generationModel,
         timeoutMs: modelTimeoutMs
       });
-      answer = generated.text || localExtractiveAnswer(selectedChunks, citations);
+      answer = generated.text || localExtractiveAnswer(question, selectedChunks, citations);
     }
   } catch (error) {
     return {
@@ -102,14 +104,41 @@ export function buildWarnings(citations, selectedLanguage) {
   return warnings;
 }
 
-function localExtractiveAnswer(chunks, citations) {
-  const sentences = chunks.slice(0, citations.length).map((chunk, index) => {
-    const sentence = firstUsefulSentence(chunk.text);
-    const prefix = ['review', 'draft'].includes(chunk.status) ? `${statusLabel(chunk.status)}: ` : '';
-    return `${prefix}${sentence} [${index + 1}]`;
-  });
+function localExtractiveAnswer(question, chunks, citations) {
+  const chunk = chunks[0];
+  if (!chunk || citations.length === 0) return INSUFFICIENT;
 
-  return sentences.join(' ');
+  const availableSentences = usefulSentences(chunk);
+  const quickAnswer = isQuickAnswerChunk(chunk);
+  const sentences = (quickAnswer
+    ? availableSentences.slice(0, 2).map((sentence, index) => ({ sentence, index }))
+    : availableSentences
+      .map((sentence, index) => ({
+        sentence,
+        index,
+        score: sentenceScore(question, sentence)
+      }))
+      .sort((a, b) => b.score - a.score || a.index - b.index)
+      .slice(0, 2)
+      .sort((a, b) => a.index - b.index))
+    .map((candidate) => protectInlineMarkup(candidate.sentence));
+  const example = quickAnswer ? preferredInlineExample(chunk.text) : '';
+  if (example && !sentences.some((sentence) => sentence.includes(example))) {
+    sentences.push(`Example: \`${example}\`.`);
+  }
+  const selected = sentences.length > 0 ? sentences : [firstUsefulSentence(chunk.text)];
+  const prefix = ['review', 'draft'].includes(chunk.status) ? `${statusLabel(chunk.status)}: ` : '';
+
+  return `${prefix}${selected.join(' ')} [1]`;
+}
+
+function isQuickAnswerChunk(chunk) {
+  const heading = String(chunk.heading_path?.[chunk.heading_path.length - 1] || '').trim().toLowerCase();
+  return heading === 'quick answer';
+}
+
+function preferredInlineExample(text) {
+  return String(text || '').match(/<meta\s+charset\s*=\s*["'][^"']+["'][^>]*>/i)?.[0] || '';
 }
 
 function localConflictAnswer(chunks, citations) {
@@ -140,6 +169,32 @@ function firstUsefulSentence(text) {
   const clean = String(text || '').replace(/\s+/g, ' ').trim();
   const sentence = clean.match(/[^.!?。！？]+[.!?。！？]/u)?.[0] || clean;
   return sentence.trim();
+}
+
+function usefulSentences(chunk) {
+  const heading = String(chunk.heading_path?.[chunk.heading_path.length - 1] || '').trim();
+  let clean = String(chunk.text || '').replace(/\s+/g, ' ').trim();
+  if (heading && clean.toLowerCase().startsWith(heading.toLowerCase())) {
+    clean = clean.slice(heading.length).trim();
+  }
+  return clean.match(/[^.!?。！？]+(?:[.!?。！？]+|$)/gu)?.map((sentence) => sentence.trim()).filter(Boolean) || [];
+}
+
+function sentenceScore(question, sentence) {
+  const questionTokens = tokenizeForAnswer(question);
+  const sentenceTokens = new Set(tokenizeForAnswer(sentence));
+  let score = questionTokens.reduce((sum, token) => sum + (sentenceTokens.has(token) ? 1 : 0), 0);
+  if (/<meta\b[^>]*charset/i.test(sentence)) score += 3;
+  if (/\b(always|should|recommend|use)\b/i.test(sentence)) score += 0.25;
+  return score;
+}
+
+function tokenizeForAnswer(value) {
+  return String(value || '').normalize('NFKC').toLowerCase().match(/[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu) || [];
+}
+
+function protectInlineMarkup(sentence) {
+  return sentence.replace(/<[^>]+>/g, (markup) => `\`${markup}\``);
 }
 
 function statusLabel(status) {

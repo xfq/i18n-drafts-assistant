@@ -81,7 +81,6 @@ const STOPWORDS = new Set([
   'draft',
   'final',
   'guidance',
-  'html',
   'index',
   'page',
   'pages',

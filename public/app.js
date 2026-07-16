@@ -303,8 +303,11 @@ function renderInlineText(text) {
     .replace(/__([^_]+)__/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
     .replace(/_([^_]+)_/g, '<em>$1</em>')
-    .replace(/\[([1-9]\d*)\]/g, (_, number) => {
-      return `<a href="#citation-${number}" class="citation-ref" aria-label="Citation ${number}">[${number}]</a>`;
+    .replace(/\[((?:[1-9]\d*\s*,\s*)*[1-9]\d*)\]/g, (_, values) => {
+      return values.split(',').map((value) => {
+        const number = value.trim();
+        return `<a href="#citation-${number}" class="citation-ref" aria-label="Citation ${number}">[${number}]</a>`;
+      }).join(' ');
     });
 }
 
