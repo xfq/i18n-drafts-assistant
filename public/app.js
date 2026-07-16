@@ -123,7 +123,7 @@ function renderCitation(citation, index) {
 
   const link = document.createElement('a');
   link.href = citation.url;
-  link.rel = 'noreferrer';
+  link.target = '_blank';
   link.setAttribute('aria-label', `Open source: ${citation.label}`);
   link.textContent = citation.url;
 
@@ -295,10 +295,14 @@ function renderInline(text) {
 }
 
 function renderInlineText(text) {
-  return escapeHtml(text)
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|mailto:[^)\s]+)\)/g, (_, label, href) => {
-      return `<a href="${escapeAttribute(href)}" rel="noreferrer">${label}</a>`;
-    })
+  const linkTokens = [];
+  const textWithLinkTokens = String(text).replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|mailto:[^)\s]+)\)/g, (_, label, href) => {
+    const token = `\u0000LINK${linkTokens.length}\u0000`;
+    linkTokens.push(`<a href="${escapeAttribute(href)}" target="_blank">${renderInlineText(label)}</a>`);
+    return token;
+  });
+
+  return escapeHtml(textWithLinkTokens)
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/__([^_]+)__/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
@@ -308,7 +312,8 @@ function renderInlineText(text) {
         const number = value.trim();
         return `<a href="#citation-${number}" class="citation-ref" aria-label="Citation ${number}">[${number}]</a>`;
       }).join(' ');
-    });
+    })
+    .replace(/\u0000LINK(\d+)\u0000/g, (_, tokenIndex) => linkTokens[Number(tokenIndex)] || '');
 }
 
 function escapeHtml(value) {

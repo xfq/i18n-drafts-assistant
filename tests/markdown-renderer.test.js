@@ -44,6 +44,13 @@ test('renders grouped API citation references as links to each source', () => {
   assert.doesNotMatch(html, /\[1, 2\]/);
 });
 
+test('opens referenced external links in a new window', () => {
+  const html = markdownToHtml('Read the [HTML standard](https://html.spec.whatwg.org/) or [send feedback](mailto:team@example.com).');
+
+  assert.match(html, /<a href="https:\/\/html\.spec\.whatwg\.org\/" target="_blank">HTML standard<\/a>/);
+  assert.match(html, /<a href="mailto:team@example\.com" target="_blank">send feedback<\/a>/);
+});
+
 test('highlights CSS selectors, properties, and values', () => {
   const html = markdownToHtml(`\`\`\`css
 .answer {

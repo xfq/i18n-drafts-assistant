@@ -22,6 +22,18 @@ test('public UI keeps the main ask flow accessible', async () => {
   assert.doesNotMatch(page, /aria-labelledby="ask-heading"/);
 });
 
+test('public UI opens the W3C reference link in a new window', async () => {
+  const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+
+  assert.match(page, /<a class="header-link" href="https:\/\/www\.w3\.org\/International\/" target="_blank">/);
+});
+
+test('citation source links open in a new window', async () => {
+  const app = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
+
+  assert.match(app, /link\.target = '_blank';/);
+});
+
 test('public UI prominently states the project is unofficial', async () => {
   const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 
