@@ -8,6 +8,13 @@ Ask W3C i18n answers questions about W3C Internationalization guidance with sour
 
 > **Unofficial project:** This is currently an unofficial project and is not an official W3C service.
 
+## Example Questions
+
+- How should I declare UTF-8 character encoding in HTML?
+- How should I set the language of the content in my HTML page?
+- What are character sets?
+- What does the i18n WG do?
+
 ## Run Locally
 
 Use a local source checkout:
