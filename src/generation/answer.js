@@ -18,7 +18,7 @@ export async function answerFromRetrieval({
   const results = retrieval?.results || [];
   const localMode = modelProvider === 'local' || modelProvider === 'none';
   const conflictIntent = asksAboutConflict(question);
-  const selectedChunks = localMode && !conflictIntent ? results.slice(0, 1) : results.slice(0, 4);
+  const selectedChunks = selectChunks(results, { localMode, conflictIntent });
   const topScore = selectedChunks[0]?.score ?? 0;
 
   if (selectedChunks.length === 0 || topScore < 0.03) {
@@ -135,6 +135,29 @@ function localExtractiveAnswer(question, chunks, citations) {
 function isQuickAnswerChunk(chunk) {
   const heading = String(chunk.heading_path?.[chunk.heading_path.length - 1] || '').trim().toLowerCase();
   return heading === 'quick answer';
+}
+
+function selectChunks(results, { localMode, conflictIntent }) {
+  const limit = localMode && !conflictIntent ? 1 : 4;
+  if (conflictIntent || results.length === 0) return results.slice(0, limit);
+
+  const topResult = results[0];
+  if (!isQuestionChunk(topResult)) return results.slice(0, limit);
+
+  const quickAnswer = results.find((chunk) => isQuickAnswerChunk(chunk) && sameSource(chunk, topResult));
+  if (!quickAnswer) return results.slice(0, limit);
+
+  return [quickAnswer, ...results.filter((chunk) => chunk !== quickAnswer)].slice(0, limit);
+}
+
+function isQuestionChunk(chunk) {
+  const heading = String(chunk.heading_path?.[chunk.heading_path.length - 1] || '').trim().toLowerCase();
+  return heading === 'question';
+}
+
+function sameSource(left, right) {
+  return left.source_path === right.source_path &&
+    String(left.source_id || '') === String(right.source_id || '');
 }
 
 function preferredInlineExample(text) {

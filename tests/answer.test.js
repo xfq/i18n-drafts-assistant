@@ -225,3 +225,65 @@ test('local mode answers an HTML UTF-8 declaration question from the direct quic
   assert.match(response.answer, /<meta charset=["']utf-8["']>/i);
   assert.doesNotMatch(response.answer, /byte-order mark|migrating data/i);
 });
+
+test('model context promotes a same-page quick answer over a question echo', async () => {
+  const question = 'How should I set the language of the content in my HTML page?';
+  const questionChunk = {
+    chunk_id: 'questions/qa-html-language-declarations.en.html#question',
+    source_path: 'questions/qa-html-language-declarations.en.html',
+    section_url: 'https://www.w3.org/International/questions/qa-html-language-declarations#question',
+    title: 'Declaring language in HTML',
+    heading_path: ['Question'],
+    language: 'en',
+    status: 'published',
+    translation_state: 'current',
+    text: `Question ${question} This page describes how to mark up an HTML page so that it gives information about the language of the page.`,
+    score: 3.9,
+    rank: 1
+  };
+  const quickAnswerChunk = {
+    ...questionChunk,
+    chunk_id: 'questions/qa-html-language-declarations.en.html#nutshell',
+    section_url: 'https://www.w3.org/International/questions/qa-html-language-declarations#nutshell',
+    heading_path: ['Quick answer'],
+    text: 'Quick answer Always use a language attribute on the html tag to declare the default language of the text in the page. For example: <html lang="en">',
+    score: 2.5,
+    rank: 8
+  };
+  const unrelatedChunks = Array.from({ length: 6 }, (_, index) => ({
+    ...questionChunk,
+    chunk_id: `questions/unrelated-${index}.en.html#section`,
+    source_path: `questions/unrelated-${index}.en.html`,
+    section_url: `https://www.w3.org/International/questions/unrelated-${index}#section`,
+    title: 'Related language guidance',
+    heading_path: ['Additional information'],
+    text: 'Additional information about language negotiation and translated pages.',
+    score: 3.5 - (index * 0.1),
+    rank: index + 2
+  }));
+  const previousFetch = globalThis.fetch;
+  let requestBody;
+  globalThis.fetch = async (_url, options) => {
+    requestBody = JSON.parse(options.body);
+    return new Response(JSON.stringify({ choices: [{ message: { content: 'Use the page language declaration. [1]' } }] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' }
+    });
+  };
+
+  try {
+    await answerFromRetrieval({
+      question,
+      language: 'en',
+      retrieval: { results: [questionChunk, ...unrelatedChunks, quickAnswerChunk] },
+      modelProvider: 'openai-compatible',
+      modelApiKey: 'test-key',
+      modelBaseUrl: 'https://model.test/v1',
+      generationModel: 'test-model'
+    });
+
+    assert.match(requestBody.messages[1].content, /<html lang="en">/i);
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
+});
