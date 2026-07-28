@@ -29,7 +29,10 @@
           <div class="field">
             <label for="question">Question</label>
             <textarea id="question" name="question" rows="5" minlength="3" required enterkeyhint="send" aria-describedby="question-help">How should I declare UTF-8 character encoding in HTML?</textarea>
-            <p id="question-help" class="hint">Answers are grounded only in indexed W3C Internationalization sources.</p>
+            <p id="question-help" class="hint">
+              Answers are grounded only in indexed W3C Internationalization sources.
+              <span class="shortcut-hint"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd> to ask.</span>
+            </p>
           </div>
 
           <div class="control-grid">
@@ -65,7 +68,7 @@
           </div>
 
           <div class="actions">
-            <button id="submit-button" type="submit">Ask from sources</button>
+            <button id="submit-button" type="submit" aria-keyshortcuts="Control+Enter Meta+Enter">Ask from sources</button>
           </div>
         </form>
       </search>

@@ -226,6 +226,24 @@ textarea {
   font-size: 0.86rem;
 }
 
+.shortcut-hint {
+  display: inline-block;
+  margin-inline-start: 0.25rem;
+}
+
+kbd {
+  border: 1px solid var(--field-border);
+  border-block-end-width: 2px;
+  border-radius: 4px;
+  padding: 0.04rem 0.3rem;
+  background: var(--surface-raised);
+  color: var(--text);
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.8em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .control-grid {
   display: grid;
   grid-template-columns: minmax(12rem, 0.9fr) minmax(18rem, 1.25fr) minmax(15rem, 1fr);

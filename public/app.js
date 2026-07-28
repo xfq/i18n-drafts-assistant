@@ -28,7 +28,22 @@ if (form) {
     if (messageArea.classList.contains('error')) setMessage('', '');
   });
 
+  questionField.addEventListener('keydown', (event) => {
+    if (!isSendShortcut(event) || submitButton.disabled) return;
+    event.preventDefault();
+    form.requestSubmit(submitButton);
+  });
+
   loadHealth();
+}
+
+export function isSendShortcut(event) {
+  return !event.defaultPrevented &&
+    event.key === 'Enter' &&
+    !event.isComposing &&
+    !event.altKey &&
+    !event.shiftKey &&
+    (event.ctrlKey || event.metaKey);
 }
 
 function validateQuestion() {

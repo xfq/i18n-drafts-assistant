@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { isSendShortcut } from '../public/app.js';
 
 test('public UI omits the retired retrieved-sources panel', async () => {
   const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
@@ -68,3 +69,34 @@ test('public UI includes a bottom notice for pull request previews', async () =>
   assert.match(css, /\.preview-notice\s*{[^}]*position:\s*fixed;[^}]*inset-block-end:\s*0;/s);
   assert.match(app, /previewNotice\.hidden\s*=\s*!health\.is_pull_request;/);
 });
+
+test('public UI exposes discoverable keyboard shortcuts', async () => {
+  const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+
+  assert.match(page, /aria-keyshortcuts="Control\+Enter Meta\+Enter"/);
+  assert.match(page, /<kbd>Ctrl<\/kbd>\/<kbd>⌘<\/kbd> \+ <kbd>Enter<\/kbd> to ask/);
+  assert.doesNotMatch(page, /to focus this field/);
+});
+
+test('send shortcut requires Ctrl or Command plus Enter outside composition', () => {
+  assert.equal(isSendShortcut(keyEvent({ key: 'Enter', ctrlKey: true })), true);
+  assert.equal(isSendShortcut(keyEvent({ key: 'Enter', metaKey: true })), true);
+  assert.equal(isSendShortcut(keyEvent({ key: 'Enter' })), false);
+  assert.equal(isSendShortcut(keyEvent({ key: 'Enter', ctrlKey: true, defaultPrevented: true })), false);
+  assert.equal(isSendShortcut(keyEvent({ key: 'Enter', ctrlKey: true, shiftKey: true })), false);
+  assert.equal(isSendShortcut(keyEvent({ key: 'Enter', ctrlKey: true, isComposing: true })), false);
+});
+
+function keyEvent(overrides = {}) {
+  return {
+    key: '',
+    altKey: false,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    isComposing: false,
+    defaultPrevented: false,
+    target: null,
+    ...overrides
+  };
+}
