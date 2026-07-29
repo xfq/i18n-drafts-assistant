@@ -431,10 +431,12 @@ button:disabled {
 .answer-text {
   max-inline-size: 76ch;
   margin-block-start: 0.9rem;
+  margin-inline: 0 auto;
   color: var(--text);
   font-size: 1rem;
   line-height: 1.68;
   overflow-wrap: break-word;
+  text-align: start;
 }
 
 .answer-placeholder {
@@ -512,8 +514,10 @@ button:disabled {
   padding: 0.95rem;
   background: var(--code-bg);
   color: var(--code-text);
+  direction: ltr;
   font-size: 0.88rem;
   line-height: 1.55;
+  text-align: start;
 }
 
 .answer-text pre code {

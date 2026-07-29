@@ -81,7 +81,7 @@ async function ask() {
       body: JSON.stringify(payload)
     });
 
-    renderAnswer(response);
+    renderAnswer(response, payload.language);
     setMessage(response.evidence_status === 'insufficient_evidence' ? 'No supported answer was found.' : '', '');
   } catch (error) {
     setMessage(error.message, 'error');
@@ -103,8 +103,9 @@ function formPayload() {
   };
 }
 
-function renderAnswer(response) {
+function renderAnswer(response, language) {
   warningsEl.replaceChildren(...(response.warnings || []).map(renderWarning));
+  answerEl.lang = language;
   renderMarkdownInto(answerEl, response.answer || 'No answer could be generated from the selected sources.');
   citationsEl.replaceChildren(...(response.citations || []).map(renderCitation));
 }

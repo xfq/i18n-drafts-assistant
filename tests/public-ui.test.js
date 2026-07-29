@@ -57,6 +57,18 @@ test('answer citation references use lighter type with micro spacing', async () 
   assert.match(citationRefRule, /letter-spacing:\s*0\.02em;/);
 });
 
+test('answer text automatically follows right-to-left content direction', async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL('../public/index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../public/styles.css', import.meta.url), 'utf8')
+  ]);
+  const answerRule = css.match(/\.answer-text\s*{(?<body>[^}]*)}/s)?.groups.body || '';
+
+  assert.match(page, /<div id="answer" class="answer-text" dir="auto" aria-busy="false">/);
+  assert.match(answerRule, /text-align:\s*start;/);
+  assert.match(answerRule, /margin-inline:\s*0 auto;/);
+});
+
 test('public UI includes a bottom notice for pull request previews', async () => {
   const [page, css, app] = await Promise.all([
     readFile(new URL('../public/index.html', import.meta.url), 'utf8'),
