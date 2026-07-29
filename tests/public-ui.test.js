@@ -23,6 +23,15 @@ test('public UI keeps the main ask flow accessible', async () => {
   assert.doesNotMatch(page, /aria-labelledby="ask-heading"/);
 });
 
+test('public UI defaults the answer language to English', async () => {
+  const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+  const options = page.match(/<select id="language" name="language">(?<options>[\s\S]*?)<\/select>/)?.groups.options || '';
+  const optionTags = [...options.matchAll(/<option\b[^>]*>/g)].map((match) => match[0]);
+  const defaultOption = optionTags.find((option) => /\bselected\b/.test(option)) || optionTags[0] || '';
+
+  assert.match(defaultOption, /\bvalue="en"/);
+});
+
 test('public UI opens the W3C reference link in a new window', async () => {
   const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 
