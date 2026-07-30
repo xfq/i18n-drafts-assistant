@@ -1,3 +1,5 @@
+[简体中文](README.zh-Hans.md)
+
 # Ask W3C i18n
 
 Ask W3C i18n answers questions about W3C Internationalization guidance with source-grounded citations and source status.
@@ -20,7 +22,7 @@ Ask W3C i18n answers questions about W3C Internationalization guidance with sour
 
 ## Run Locally
 
-Use a local source checkout:
+Use the local source:
 
 ```sh
 cp .env.example .env
@@ -37,18 +39,11 @@ SOURCE_MODE=git npm run index
 npm run start
 ```
 
-Open `http://127.0.0.1:3000`.
+Open http://127.0.0.1:3000 .
 
 ## Configuration
 
 The app loads `.env` automatically from the project root. Copy `.env.example` to `.env` for local development, then edit values there.
-
-Configuration precedence is:
-
-1. explicit code/CLI overrides
-2. shell environment variables
-3. `.env`
-4. built-in defaults
 
 Do not commit real `.env` files or secrets.
 
@@ -105,7 +100,7 @@ npm run eval
 
 ## Community API
 
-The stable community API is versioned under `/api/v1`. It uses the latest loaded index only; answer and search requests do not clone or fetch sources.
+The stable community API is versioned under `/api/v1`. It uses the latest loaded index.
 
 OpenAPI documentation is available at:
 
@@ -215,13 +210,7 @@ CORS is enabled for the community API. The same in-memory rate limiter applies t
 - `POST /api/ask` returns `{ answer, citations, warnings, evidence_status, debug }`.
 - `POST /api/admin/reindex` is hidden unless `ADMIN_TOKEN` is set and must be called with `x-admin-token`.
 
-## Data Model
-
-The prototype stores JSON in `.data/index.json`:
-
-- `documents`: source metadata, status, translation state, canonical URL, hash.
-- `chunks`: semantic section chunks with section URLs and heading paths.
-- `index_runs`: source mode, ref, commit, counts, warnings, and errors.
+## Logs
 
 Query logs are JSONL at `.data/query-log.jsonl` and store question text, selected language, filters, retrieved source ids, evidence status, latency, and error type. They do not store API keys or account identifiers.
 
