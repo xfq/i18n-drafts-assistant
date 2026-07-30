@@ -78,9 +78,11 @@ Retrieval scoring combines two signals:
 
 The project does not currently use a vector database. The indexed corpus is small enough to load into memory and scan directly, and the current retrieval goals favor deterministic ranking over semantic nearest-neighbor recall. A vector database would add operational complexity, embedding generation, and model-version sensitivity without solving a current scaling problem. Revisit this choice if the corpus grows large enough that in-memory scanning becomes slow.
 
-## External Model and Prompt Injection Protection
+## External Model
 
 `MODEL_PROVIDER=local` uses the deterministic extractive answerer and does not send prompts to a model provider.
+
+The external-model prompt is defined in `src/generation/prompt.js`. `buildPrompt()` constructs a system message containing the answering and citation rules, plus a user message containing the preferred answer language, the user's question, and the retrieved context. `src/generation/answer.js` selects the retrieved chunks and builds the prompt, and `src/generation/model-client.js` sends the two messages to the OpenAI-compatible `/chat/completions` endpoint.
 
 When `MODEL_PROVIDER=openai-compatible` is enabled, the project reduces prompt injection risk through the following controls:
 
