@@ -25,6 +25,7 @@ export function chunkHtmlPage(page, options = {}) {
         language: page.language,
         status: page.status,
         translation_state: page.translation_state,
+        translation_group_id: page.translation_group_id,
         title: page.title || page.h1 || page.source_path,
         heading_path: raw.heading_path.length > 0 ? raw.heading_path : [page.h1 || page.title].filter(Boolean),
         text,

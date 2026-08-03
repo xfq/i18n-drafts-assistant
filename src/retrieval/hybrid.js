@@ -61,7 +61,11 @@ export function retrieve({
       ...chunk,
       score: round(chunk.base_score + languageBoost(chunk, requestedLanguage) + statusBoost(chunk.status) + translationBoost(chunk))
     }))
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.score - a.score);
+
+  const withTranslations = addTranslationCounterparts(afterRanking, chunks, requestedLanguage, limit);
+
+  const finalResults = withTranslations
     .slice(0, limit)
     .map((chunk, index) => ({ ...chunk, rank: index + 1 }));
 
@@ -73,7 +77,7 @@ export function retrieve({
       statuses: [...allowedStatuses],
       includeObsolete
     },
-    results: afterRanking,
+    results: finalResults,
     debug: {
       raw_query: query,
       normalized_query: normalizedQuery,
@@ -83,7 +87,7 @@ export function retrieve({
         includeObsolete
       },
       retrieved_before_ranking: beforeRanking,
-      retrieved_after_ranking: afterRanking
+      retrieved_after_ranking: finalResults
     }
   };
 }
@@ -240,10 +244,70 @@ function publicChunk(chunk) {
     language: chunk.language,
     status: chunk.status,
     translation_state: chunk.translation_state,
+    translation_group_id: chunk.translation_group_id,
     text: chunk.text
   };
   if (chunk.source_id) result.source_id = chunk.source_id;
   return result;
+}
+
+function addTranslationCounterparts(afterRanking, allChunks, requestedLanguage, limit) {
+  if (requestedLanguage === 'en') return afterRanking;
+
+  // Only check top results — low-scoring translated chunks in the tail
+  // of afterRanking (from shared technical terms like “utf-8”) don't count.
+  const topResults = afterRanking.slice(0, limit);
+  if (topResults.some((chunk) => chunk.language === requestedLanguage)) return afterRanking;
+
+  const englishResults = afterRanking.filter((chunk) => chunk.language === 'en');
+  if (englishResults.length === 0) return afterRanking;
+
+  const groups = new Map();
+  for (const result of englishResults) {
+    const gid = result.translation_group_id;
+    if (gid && (!groups.has(gid) || result.score > groups.get(gid))) {
+      groups.set(gid, result.score);
+    }
+  }
+
+  if (groups.size === 0) return afterRanking;
+
+  const translated = [];
+  const groupCounts = new Map();
+  for (const chunk of allChunks) {
+    const gid = chunk.translation_group_id;
+    if (!gid || !groups.has(gid) || chunk.language !== requestedLanguage) continue;
+
+    // Cap per-group translated chunks so one page does not dominate
+    // the results. The cap matches the number of English chunks from
+    // that same group already present in the ranked list, or 4,
+    // whichever is smaller.
+    const groupCap = Math.min(
+      afterRanking.filter((r) => r.translation_group_id === gid && r.language === 'en').length || 3,
+      4
+    );
+    const used = groupCounts.get(gid) || 0;
+    if (used >= groupCap) continue;
+    groupCounts.set(gid, used + 1);
+
+    translated.push({
+      ...publicChunk(chunk),
+      keyword_score: 0,
+      vector_score: 0,
+      matched_tokens: [],
+      base_score: round(groups.get(gid) - 0.01),
+      score: round(groups.get(gid) - 0.01 + languageBoost(chunk, requestedLanguage) + statusBoost(chunk.status) + translationBoost(chunk))
+    });
+  }
+
+  // Remove low-scoring existing versions of these chunks from afterRanking,
+  // then add the higher-scoring translated counterparts.
+  const translatedIds = new Set(translated.map((chunk) => chunk.chunk_id));
+  const filtered = afterRanking.filter((chunk) => !translatedIds.has(chunk.chunk_id));
+
+  if (translated.length === 0) return afterRanking;
+
+  return [...filtered, ...translated].sort((a, b) => b.score - a.score);
 }
 
 function round(value) {
