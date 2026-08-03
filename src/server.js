@@ -24,7 +24,8 @@ import {
 
 const PUBLIC_DIR = new URL('../public/', import.meta.url).pathname;
 
-export function createServer({ index = null, config = getConfig() } = {}) {
+export function createServer({ index = null, config = getConfig(), indexer = runIndexer } = {}) {
+  const state = { index };
   const rateLimiter = createRateLimiter(config.rateLimitWindowMs, config.rateLimitMax, {
     trustedProxies: config.trustedProxies,
     sendLimitExceeded: (limitedRequest, limitedResponse) => {
@@ -33,7 +34,7 @@ export function createServer({ index = null, config = getConfig() } = {}) {
         sendJson(
           limitedResponse,
           429,
-          communityErrorPayload(publicApiError(429, 'rate_limit_exceeded', 'Rate limit exceeded.'), index, config),
+          communityErrorPayload(publicApiError(429, 'rate_limit_exceeded', 'Rate limit exceeded.'), state.index, config),
           communityCorsHeaders()
         );
         return;
@@ -56,14 +57,14 @@ export function createServer({ index = null, config = getConfig() } = {}) {
         }
 
         if (!rateLimiter(request, response)) return;
-        await handleApi({ request, response, url, index, config });
+        await handleApi({ request, response, url, state, config, indexer });
         return;
       }
 
       await serveStatic(request, response, url);
     } catch (error) {
       if (url && isCommunityApiPath(url.pathname)) {
-        sendJson(response, httpErrorStatus(error), communityErrorPayload(error, index, config), communityCorsHeaders());
+        sendJson(response, httpErrorStatus(error), communityErrorPayload(error, state.index, config), communityCorsHeaders());
       } else {
         sendJson(response, httpErrorStatus(error), {
           evidence_status: 'error',
@@ -74,7 +75,9 @@ export function createServer({ index = null, config = getConfig() } = {}) {
   });
 }
 
-async function handleApi({ request, response, url, index, config }) {
+async function handleApi({ request, response, url, state, config, indexer }) {
+  const index = state.index;
+
   if (request.method === 'GET' && url.pathname === '/api/openapi.json') {
     sendJson(response, 200, openApiDocument(), communityCorsHeaders());
     return;
@@ -220,9 +223,9 @@ async function handleApi({ request, response, url, index, config }) {
       sendJson(response, 403, { error: 'Forbidden.' });
       return;
     }
-    const newIndex = await runIndexer(config);
-    index = newIndex;
-    sendJson(response, 200, healthPayload(index, config));
+    const newIndex = await indexer(config);
+    state.index = newIndex;
+    sendJson(response, 200, healthPayload(newIndex, config));
     return;
   }
 

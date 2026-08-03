@@ -275,6 +275,84 @@ test('HTTP API exposes whether the app is running as a pull request preview', as
   }
 });
 
+test('admin reindex replaces the index used by subsequent API requests', async () => {
+  const initialIndex = {
+    source: { mode: 'local', ref: 'old-ref', commit: 'old-sha' },
+    summary: { finished_at: '2026-01-01T00:00:00.000Z' },
+    documents: [{ id: 'old-document' }],
+    chunks: [
+      {
+        chunk_id: 'old.html#old',
+        source_path: 'old.html',
+        section_url: 'https://example.test/old#old',
+        title: 'Old guidance',
+        heading_path: ['Old'],
+        language: 'en',
+        status: 'published',
+        translation_state: 'current',
+        text: 'old marker'
+      }
+    ]
+  };
+  const rebuiltIndex = {
+    source: { mode: 'local', ref: 'new-ref', commit: 'new-sha' },
+    summary: { finished_at: '2026-02-01T00:00:00.000Z' },
+    documents: [{ id: 'new-document-1' }, { id: 'new-document-2' }],
+    chunks: [
+      {
+        chunk_id: 'new.html#new',
+        source_path: 'new.html',
+        section_url: 'https://example.test/new#new',
+        title: 'New guidance',
+        heading_path: ['New'],
+        language: 'en',
+        status: 'published',
+        translation_state: 'current',
+        text: 'new marker'
+      }
+    ]
+  };
+  let reindexCalls = 0;
+  const app = createServer({
+    index: initialIndex,
+    config: fixtureConfig({ adminToken: 'test-admin-token' }),
+    indexer: async (config) => {
+      reindexCalls += 1;
+      assert.equal(config.adminToken, 'test-admin-token');
+      return rebuiltIndex;
+    }
+  });
+  app.listen(0, '127.0.0.1');
+  await once(app, 'listening');
+  const { port } = app.address();
+
+  try {
+    const reindexResponse = await fetch(`http://127.0.0.1:${port}/api/admin/reindex`, {
+      method: 'POST',
+      headers: { 'x-admin-token': 'test-admin-token' }
+    });
+    const reindexHealth = await reindexResponse.json();
+
+    assert.equal(reindexResponse.status, 200);
+    assert.equal(reindexCalls, 1);
+    assert.equal(reindexHealth.source_commit, 'new-sha');
+    assert.equal(reindexHealth.indexed_documents, 2);
+
+    const health = await fetch(`http://127.0.0.1:${port}/api/health`).then((response) => response.json());
+    assert.equal(health.source_commit, 'new-sha');
+    assert.equal(health.indexed_documents, 2);
+
+    const retrieval = await fetch(`http://127.0.0.1:${port}/api/retrieve`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query: 'new marker', language: 'en', statuses: ['published'] })
+    }).then((response) => response.json());
+    assert.equal(retrieval.results[0].source_path, 'new.html');
+  } finally {
+    app.close();
+  }
+});
+
 test('HTTP API ask returns when the model provider times out', async () => {
   const index = await buildIndex({
     sourceRoot: fixtureRoot,
