@@ -179,3 +179,66 @@ test('retrieval rejects related content that does not cover the full short-query
 
   assert.equal(result.results.length, 0);
 });
+
+test('retrieval ranks the language-declaration page for a Chinese query with Latin adjacency', () => {
+  const languageChunks = [
+    {
+      chunk_id: 'questions/qa-html-language-declarations.zh-hans.html#question',
+      source_path: 'questions/qa-html-language-declarations.zh-hans.html',
+      section_url: 'https://www.w3.org/International/questions/qa-html-language-declarations.zh-hans.html#question',
+      title: '在HTML中声明语言',
+      heading_path: ['问题'],
+      language: 'zh-hans',
+      status: 'published',
+      translation_state: 'current',
+      text: '问题 如何设置HTML页面的内容语言？ 本文描述了如何通过标记HTML页面来提供有关页面语言的信息。'
+    },
+    {
+      chunk_id: 'questions/qa-html-language-declarations.zh-hans.html#nutshell',
+      source_path: 'questions/qa-html-language-declarations.zh-hans.html',
+      section_url: 'https://www.w3.org/International/questions/qa-html-language-declarations.zh-hans.html#nutshell',
+      title: '在HTML中声明语言',
+      heading_path: ['快速回答'],
+      language: 'zh-hans',
+      status: 'published',
+      translation_state: 'current',
+      text: '快速回答 始终在 html 标签上使用语言属性来声明页面中文本的默认语言。'
+    },
+    {
+      chunk_id: 'questions/qa-bidi-unicode-controls.zh-hans.html#reasons',
+      source_path: 'questions/qa-bidi-unicode-controls.zh-hans.html',
+      section_url: 'https://www.w3.org/International/questions/qa-bidi-unicode-controls.zh-hans.html#reasons',
+      title: 'Unicode 双向算法',
+      heading_path: ['本文涵盖和不涵盖的内容'],
+      language: 'zh-hans',
+      status: 'published',
+      translation_state: 'current',
+      text: '本文涵盖和不涵盖的内容 本文说明如何在HTML中处理双向文本，以及如何使用Unicode控制字符。'
+    },
+    {
+      chunk_id: 'questions/qa-htaccess-charset.zh-hans.html#question',
+      source_path: 'questions/qa-htaccess-charset.zh-hans.html',
+      section_url: 'https://www.w3.org/International/questions/qa-htaccess-charset.zh-hans.html#question',
+      title: '在 Apache 中声明字符编码',
+      heading_path: ['问题'],
+      language: 'zh-hans',
+      status: 'published',
+      translation_state: 'current',
+      text: '问题 如何设置Web服务器的字符编码？'
+    }
+  ];
+
+  const result = retrieve({
+    query: '如何在HTML中设置内容的语言？',
+    language: 'zh-hans',
+    statuses: ['published', 'review', 'draft'],
+    includeObsolete: false,
+    chunks: languageChunks,
+    limit: 5
+  });
+
+  assert.equal(result.results[0].source_path, 'questions/qa-html-language-declarations.zh-hans.html');
+  assert(result.results[0].matched_tokens.includes('设'));
+  assert(result.results[0].matched_tokens.includes('语'));
+  assert(result.results[0].matched_tokens.includes('言'));
+});

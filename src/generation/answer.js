@@ -8,6 +8,7 @@ export async function answerFromRetrieval({
   question,
   language = 'en',
   retrieval,
+  chunks = [],
   enableDebug = false,
   modelProvider = 'local',
   modelApiKey = '',
@@ -18,7 +19,7 @@ export async function answerFromRetrieval({
   const results = retrieval?.results || [];
   const localMode = modelProvider === 'local' || modelProvider === 'none';
   const conflictIntent = asksAboutConflict(question);
-  const selectedChunks = selectChunks(results, { localMode, conflictIntent });
+  const selectedChunks = selectChunks(results, { localMode, conflictIntent, chunks });
   const topScore = selectedChunks[0]?.score ?? 0;
 
   if (selectedChunks.length === 0 || topScore < 0.03) {
@@ -134,17 +135,20 @@ function localExtractiveAnswer(question, chunks, citations) {
 
 function isQuickAnswerChunk(chunk) {
   const heading = String(chunk.heading_path?.[chunk.heading_path.length - 1] || '').trim().toLowerCase();
-  return heading === 'quick answer';
+  if (heading === 'quick answer') return true;
+  // Section ids come from the page anchors and stay stable across
+  // translations, unlike the heading text (e.g. "快速回答").
+  return ['nutshell', 'quickanswer'].includes(sectionId(chunk));
 }
 
-function selectChunks(results, { localMode, conflictIntent }) {
+function selectChunks(results, { localMode, conflictIntent, chunks = [] }) {
   const limit = localMode && !conflictIntent ? 1 : 4;
   if (conflictIntent || results.length === 0) return results.slice(0, limit);
 
   const topResult = results[0];
   if (!isQuestionChunk(topResult)) return results.slice(0, limit);
 
-  const quickAnswer = results.find((chunk) => isQuickAnswerChunk(chunk) && sameSource(chunk, topResult));
+  const quickAnswer = findQuickAnswer(topResult, results, chunks);
   if (!quickAnswer) return results.slice(0, limit);
 
   return [quickAnswer, ...results.filter((chunk) => chunk !== quickAnswer)].slice(0, limit);
@@ -152,7 +156,28 @@ function selectChunks(results, { localMode, conflictIntent }) {
 
 function isQuestionChunk(chunk) {
   const heading = String(chunk.heading_path?.[chunk.heading_path.length - 1] || '').trim().toLowerCase();
-  return heading === 'question';
+  if (heading === 'question') return true;
+  return sectionId(chunk) === 'question';
+}
+
+function sectionId(chunk) {
+  return String(chunk.chunk_id || '').split('#')[1] || '';
+}
+
+function findQuickAnswer(topResult, results, chunks) {
+  const inResults = results.find((chunk) => isQuickAnswerChunk(chunk) && sameSource(chunk, topResult));
+  if (inResults) return inResults;
+
+  // The quick-answer section often ranks far below the question echo for
+  // lexical retrieval, so look it up in the full corpus when available.
+  for (const chunk of Array.isArray(chunks) ? chunks : []) {
+    if (isQuickAnswerChunk(chunk) && sameSource(chunk, topResult)) {
+      // The corpus chunk was not retrieved, so it has no retrieval score;
+      // inherit the score of the question chunk it answers.
+      return { ...chunk, score: topResult.score ?? chunk.score };
+    }
+  }
+  return null;
 }
 
 function sameSource(left, right) {

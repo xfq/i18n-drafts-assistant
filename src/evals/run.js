@@ -27,6 +27,7 @@ async function main() {
       question: testCase.question,
       language: testCase.language,
       retrieval,
+      chunks: index.chunks,
       modelProvider: 'local'
     });
     const sourcePaths = new Set(answer.citations.map((citation) => citation.source_path));

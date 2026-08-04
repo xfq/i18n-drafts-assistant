@@ -287,3 +287,66 @@ test('model context promotes a same-page quick answer over a question echo', asy
     globalThis.fetch = previousFetch;
   }
 });
+
+test('model context pulls a translated quick answer from the corpus when it is not in retrieved results', async () => {
+  const question = '如何在HTML中设置内容的语言？';
+  const questionChunk = {
+    chunk_id: 'questions/qa-html-language-declarations.zh-hans.html#question',
+    source_path: 'questions/qa-html-language-declarations.zh-hans.html',
+    section_url: 'https://www.w3.org/International/questions/qa-html-language-declarations.zh-hans.html#question',
+    title: '在HTML中声明语言',
+    heading_path: ['问题'],
+    language: 'zh-hans',
+    status: 'published',
+    translation_state: 'current',
+    text: `问题 ${question} 本文描述了如何通过标记HTML页面来提供有关页面语言的信息。`,
+    score: 4.5,
+    rank: 1
+  };
+  const quickAnswerChunk = {
+    ...questionChunk,
+    chunk_id: 'questions/qa-html-language-declarations.zh-hans.html#nutshell',
+    section_url: 'https://www.w3.org/International/questions/qa-html-language-declarations.zh-hans.html#nutshell',
+    heading_path: ['快速回答'],
+    text: '快速回答 始终在 html 标签上使用语言属性来声明页面中文本的默认语言。例如： <html lang="zh-Hans">',
+    score: 0,
+    rank: 99
+  };
+  const unrelatedChunks = Array.from({ length: 5 }, (_, index) => ({
+    ...questionChunk,
+    chunk_id: `questions/unrelated-${index}.zh-hans.html#section`,
+    source_path: `questions/unrelated-${index}.zh-hans.html`,
+    section_url: `https://www.w3.org/International/questions/unrelated-${index}#section`,
+    title: '相关语言指南',
+    heading_path: ['附加信息'],
+    text: '附加信息 关于语言协商和翻译页面的说明。',
+    score: 4 - (index * 0.1),
+    rank: index + 2
+  }));
+  const previousFetch = globalThis.fetch;
+  let requestBody;
+  globalThis.fetch = async (_url, options) => {
+    requestBody = JSON.parse(options.body);
+    return new Response(JSON.stringify({ choices: [{ message: { content: '始终在 html 标签上使用语言属性。 [1]' } }] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' }
+    });
+  };
+
+  try {
+    await answerFromRetrieval({
+      question,
+      language: 'zh-hans',
+      retrieval: { results: [questionChunk, ...unrelatedChunks] },
+      chunks: [...unrelatedChunks, quickAnswerChunk],
+      modelProvider: 'openai-compatible',
+      modelApiKey: 'test-key',
+      modelBaseUrl: 'https://model.test/v1',
+      generationModel: 'test-model'
+    });
+
+    assert.match(requestBody.messages[1].content, /<html lang="zh-Hans">/i);
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
+});

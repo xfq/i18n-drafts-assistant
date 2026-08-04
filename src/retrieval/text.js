@@ -1,6 +1,15 @@
 import { stem } from './stemmer.js';
 
-const CJK_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+const CJK_CLASS = '\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}';
+const CJK_RE = new RegExp(`[${CJK_CLASS}]`, 'u');
+
+// A Latin/number run must stop before a CJK character: Han characters are
+// Unicode letters, so an unbounded [\p{L}\p{N}-]* would otherwise swallow
+// adjacent CJK text into one token (e.g. "HTML中设置内容的语言").
+const TOKEN_PATTERN = new RegExp(
+  `[${CJK_CLASS}]|(?![${CJK_CLASS}])[\\p{L}\\p{N}](?:(?![${CJK_CLASS}])[\\p{L}\\p{N}-])*`,
+  'gu'
+);
 
 export function normalizeQuery(query = '') {
   return String(query).normalize('NFKC').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -9,10 +18,9 @@ export function normalizeQuery(query = '') {
 export function tokenize(value = '') {
   const normalized = normalizeQuery(value);
   const tokens = [];
-  const pattern = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]|[\p{L}\p{N}][\p{L}\p{N}-]*/gu;
   let match;
 
-  while ((match = pattern.exec(normalized))) {
+  while ((match = TOKEN_PATTERN.exec(normalized))) {
     const raw = match[0];
 
     if (CJK_RE.test(raw)) {

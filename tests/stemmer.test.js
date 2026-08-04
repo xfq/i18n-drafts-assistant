@@ -53,3 +53,9 @@ test('tokenize preserves CJK tokens without stemming', () => {
   const tokens = tokenize('字符编码');
   assert.deepEqual(tokens, ['字', '符', '编', '码']);
 });
+
+test('tokenize does not merge Latin runs with adjacent CJK characters', () => {
+  const tokens = tokenize('如何在HTML中设置内容的语言？');
+  assert.deepEqual(tokens, ['如', '何', '在', 'html', '中', '设', '置', '内', '容', '的', '语', '言']);
+  assert(!tokens.includes('html中设置内容的语言'));
+});
