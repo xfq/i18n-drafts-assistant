@@ -186,11 +186,12 @@ function renderCitation(citation, index) {
 
   const meta = document.createElement('div');
   meta.className = 'meta-row';
-  meta.append(
-    badge(statusLabel(citation.status), citation.status),
-    badge(translationLabel(citation.translation_state), citation.translation_state),
-    languageNode(citation.language)
-  );
+  const badges = [badge(statusLabel(citation.status), citation.status)];
+  if (!isEnglishLanguage(citation.language)) {
+    badges.push(badge(translationLabel(citation.translation_state), citation.translation_state));
+  }
+  badges.push(languageNode(citation.language));
+  meta.append(...badges);
 
   const link = document.createElement('a');
   link.href = citation.url;
@@ -236,6 +237,11 @@ function translationLabel(state) {
     unknown: t('translationUnknown')
   };
   return labels[state] || state || t('translationUnknown');
+}
+
+export function isEnglishLanguage(language) {
+  const normalized = String(language || '').toLowerCase().replace(/_/g, '-');
+  return normalized === 'en' || normalized.startsWith('en-');
 }
 
 function setLoading(message) {

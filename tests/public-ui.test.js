@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { isSendShortcut } from '../public/app.js';
+import { isEnglishLanguage, isSendShortcut } from '../public/app.js';
 
 test('public UI omits the retired retrieved-sources panel', async () => {
   const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
@@ -65,6 +65,16 @@ test('answer citation references use lighter type with micro spacing', async () 
 
   assert.match(citationRefRule, /font-weight:\s*620;/);
   assert.match(citationRefRule, /letter-spacing:\s*0\.02em;/);
+});
+
+test('English citations omit the translation-state badge', async () => {
+  const app = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
+
+  assert.equal(isEnglishLanguage('en'), true);
+  assert.equal(isEnglishLanguage('en-US'), true);
+  assert.equal(isEnglishLanguage('zh-hans'), false);
+  assert.equal(isEnglishLanguage(''), false);
+  assert.match(app, /if \(!isEnglishLanguage\(citation\.language\)\)\s*\{[^}]*translationLabel/);
 });
 
 test('answer text automatically follows right-to-left content direction', async () => {

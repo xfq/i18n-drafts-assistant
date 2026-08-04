@@ -121,6 +121,10 @@ The E2E tests cover the ask flow, UI and answer language switching, validation, 
 
 The static `tests/public-ui.test.js` checks remain as contract checks for markup and accessibility attributes.
 
+## Citation Display
+
+Each citation card shows a status badge, a translation-state badge, and the page language. The translation-state badge is omitted for English-language pages: English is the original language of the W3C i18n articles, so labels such as "Current translation" are only meaningful for non-English citations.
+
 ## Pull Request Previews
 
 Maintainers can add the `render-preview` label to a pull request to render the PR preview. The preview UI displays a bottom notice when it is running from a pull request preview environment.
