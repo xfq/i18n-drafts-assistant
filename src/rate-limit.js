@@ -1,19 +1,33 @@
 import { isIP } from 'node:net';
 
-export function createRateLimiter(windowMs, maxRequests, { trustedProxies = [], sendLimitExceeded = sendRateLimitExceeded } = {}) {
+const DEFAULT_MAX_BUCKETS = 10_000;
+
+export function createRateLimiter(windowMs, maxRequests, {
+  trustedProxies = [],
+  sendLimitExceeded = sendRateLimitExceeded,
+  now = () => Date.now(),
+  maxBuckets = DEFAULT_MAX_BUCKETS
+} = {}) {
   const buckets = new Map();
   const trustedProxyRanges = parseTrustedProxyRanges(trustedProxies);
 
   return (request, response) => {
-    const now = Date.now();
+    const currentTime = now();
     const key = rateLimitKeyForRequest(request, trustedProxyRanges);
-    const bucket = buckets.get(key) || { count: 0, resetAt: now + windowMs };
-    if (now > bucket.resetAt) {
-      bucket.count = 0;
-      bucket.resetAt = now + windowMs;
+    let bucket = buckets.get(key);
+
+    if (!bucket || currentTime > bucket.resetAt) {
+      // Expired or first-visit buckets get a fresh window; delete the stale
+      // entry so returning clients do not accumulate old buckets forever.
+      if (bucket) buckets.delete(key);
+      // Once the map reaches its cap, reclaim expired entries from one-shot
+      // visitors to keep memory bounded.
+      if (buckets.size >= maxBuckets) pruneExpiredBuckets(buckets, currentTime);
+      bucket = { count: 0, resetAt: currentTime + windowMs };
+      buckets.set(key, bucket);
     }
+
     bucket.count += 1;
-    buckets.set(key, bucket);
 
     if (bucket.count > maxRequests) {
       sendLimitExceeded(request, response);
@@ -21,6 +35,12 @@ export function createRateLimiter(windowMs, maxRequests, { trustedProxies = [], 
     }
     return true;
   };
+}
+
+export function pruneExpiredBuckets(buckets, currentTime) {
+  for (const [key, bucket] of buckets) {
+    if (currentTime > bucket.resetAt) buckets.delete(key);
+  }
 }
 
 function sendRateLimitExceeded(_request, response) {
