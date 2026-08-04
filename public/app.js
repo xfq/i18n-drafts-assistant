@@ -1,5 +1,5 @@
 import { highlightCode } from './syntax-highlight.js';
-import { applyUILanguage, detectUILanguage, getUILanguage, t } from './i18n.js';
+import { MESSAGES, applyUILanguage, detectUILanguage, getUILanguage, t } from './i18n.js';
 
 const form = typeof document === 'undefined' ? null : document.querySelector('#ask-form');
 const questionField = form?.elements.namedItem('question') || null;
@@ -18,10 +18,12 @@ let lastPayload = null;
 
 if (form) {
   applyUILanguage(detectUILanguage());
+  updateQuestionSample();
   if (uiLanguageSelect) {
     uiLanguageSelect.value = getUILanguage();
     uiLanguageSelect.addEventListener('change', () => {
       applyUILanguage(uiLanguageSelect.value);
+      updateQuestionSample();
       rerenderTranslatedState();
     });
   }
@@ -49,6 +51,16 @@ if (form) {
   });
 
   loadHealth();
+}
+
+function updateQuestionSample() {
+  if (!questionField) return;
+  const sample = t('sampleQuestion');
+  const isSample = Object.values(MESSAGES)
+    .some((messages) => messages.sampleQuestion === questionField.value);
+  if (isSample && questionField.value !== sample) {
+    questionField.value = sample;
+  }
 }
 
 export function isSendShortcut(event) {

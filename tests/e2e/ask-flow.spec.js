@@ -22,6 +22,19 @@ test('switching the UI language localizes the interface', async ({ page }) => {
 
   await expect(page.locator('#submit-button')).toHaveText('提问');
   await expect(page.locator('label[for="question"]')).toHaveText('问题');
+  await expect(page.locator('#question')).toHaveValue('如何在HTML中声明UTF-8编码？');
+
+  await page.locator('#ui-language').selectOption('en');
+  await expect(page.locator('#question')).toHaveValue(UTF8_QUESTION);
+});
+
+test('switching the UI language preserves a typed question', async ({ page }) => {
+  await page.goto('/');
+
+  await page.locator('#question').fill('How should I handle bidi text in HTML?');
+  await page.locator('#ui-language').selectOption('zh-hans');
+
+  await expect(page.locator('#question')).toHaveValue('How should I handle bidi text in HTML?');
 });
 
 test('answer language follows the selected answer language', async ({ page }) => {
