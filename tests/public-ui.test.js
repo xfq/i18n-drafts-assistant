@@ -19,7 +19,7 @@ test('public UI keeps the main ask flow accessible', async () => {
   assert.match(page, /<main id="content" class="app-shell" tabindex="-1">/);
   assert.match(page, /aria-describedby="question-help"/);
   assert.match(page, /<section id="message-area" class="message-area" aria-live="polite" aria-atomic="true"><\/section>/);
-  assert.match(page, /<ol id="citations" class="citation-list" role="list" aria-label="Cited sources"><\/ol>/);
+  assert.match(page, /<ol id="citations" class="citation-list" role="list"[^>]*aria-label="Cited sources"><\/ol>/);
   assert.doesNotMatch(page, /aria-labelledby="ask-heading"/);
 });
 
@@ -47,7 +47,7 @@ test('citation source links open in a new window', async () => {
 test('public UI prominently states the project is unofficial', async () => {
   const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 
-  assert.match(page, /<aside class="project-notice" aria-label="Project status">/);
+  assert.match(page, /<aside class="project-notice"[^>]*aria-label="Project status">/);
   assert.match(page, /currently an unofficial project/i);
 });
 
@@ -85,7 +85,7 @@ test('public UI includes a bottom notice for pull request previews', async () =>
     readFile(new URL('../public/app.js', import.meta.url), 'utf8')
   ]);
 
-  assert.match(page, /<footer id="preview-notice" class="preview-notice" hidden>/);
+  assert.match(page, /<footer id="preview-notice" class="preview-notice"[^>]* hidden>/);
   assert.match(page, /This is a PR preview\./);
   assert.match(css, /\.preview-notice\s*{[^}]*position:\s*fixed;[^}]*inset-block-end:\s*0;/s);
   assert.match(app, /previewNotice\.hidden\s*=\s*!health\.is_pull_request;/);
@@ -95,8 +95,19 @@ test('public UI exposes discoverable keyboard shortcuts', async () => {
   const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 
   assert.match(page, /aria-keyshortcuts="Control\+Enter Meta\+Enter"/);
-  assert.match(page, /<kbd>Ctrl<\/kbd>\/<kbd>⌘<\/kbd> \+ <kbd>Enter<\/kbd> to ask/);
+  assert.match(page, /<span dir="ltr" class="shortcut-keys"><kbd>Ctrl<\/kbd>\/<kbd>⌘<\/kbd> \+ <kbd>Enter<\/kbd><\/span>/);
+  assert.match(page, /data-i18n="shortcutHintAfter"> to ask\./);
   assert.doesNotMatch(page, /to focus this field/);
+});
+
+test('public UI offers an interface language selector covering all UI languages', async () => {
+  const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+  const options = page.match(/<select id="ui-language"[^>]*>(?<options>[\s\S]*?)<\/select>/)?.groups.options || '';
+
+  assert.match(options, /\bvalue="en" selected/);
+  for (const value of ['en', 'zh-hans']) {
+    assert.match(options, new RegExp(`value="${value}"`));
+  }
 });
 
 test('send shortcut requires Ctrl or Command plus Enter outside composition', () => {

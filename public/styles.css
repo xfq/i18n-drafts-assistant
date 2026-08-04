@@ -160,6 +160,31 @@ pre:focus-visible {
   text-decoration: none;
 }
 
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.ui-language-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ui-language-switcher select {
+  inline-size: auto;
+  min-block-size: 34px;
+  padding-block: 0.3rem;
+  padding-inline: 0.5rem;
+  font-size: 0.9rem;
+}
+
 .app-shell {
   inline-size: min(100%, 1080px);
   margin-inline: auto;
@@ -229,6 +254,10 @@ textarea {
 .shortcut-hint {
   display: inline-block;
   margin-inline-start: 0.25rem;
+}
+
+.shortcut-keys {
+  white-space: nowrap;
 }
 
 kbd {

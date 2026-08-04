@@ -8,68 +8,82 @@
   <script type="module" src="/app.js"></script>
 </head>
 <body>
-  <a class="skip-link" href="#content">Skip to content</a>
+  <a class="skip-link" href="#content" data-i18n="skipLink">Skip to content</a>
   <header class="app-header">
     <div class="app-header__inner">
       <div>
         <h1>Ask W3C i18n</h1>
         <p id="health-status" class="status-line" aria-live="polite">Checking index status...</p>
       </div>
-      <a class="header-link" href="https://www.w3.org/International/" target="_blank">W3C Internationalization</a>
+      <div class="app-header__actions">
+        <label class="ui-language-switcher" for="ui-language">
+          <span data-i18n="uiLanguageLabel">UI language</span>
+          <select id="ui-language" name="ui-language">
+            <option value="en" selected>English</option>
+            <option value="zh-hans">简体中文</option>
+          </select>
+        </label>
+        <a class="header-link" href="https://www.w3.org/International/" target="_blank">W3C Internationalization</a>
+      </div>
     </div>
-    <aside class="project-notice" aria-label="Project status">
-      <strong>Unofficial project.</strong> This is currently an unofficial project by Fuqiao Xue and is not an official W3C service.
+    <aside class="project-notice" data-i18n-aria-label="projectStatusLabel" aria-label="Project status">
+      <strong data-i18n="projectNoticeStrong">Unofficial project.</strong>
+      <span data-i18n="projectNoticeText">This is currently an unofficial project by Fuqiao Xue and is not an official W3C service.</span>
     </aside>
   </header>
 
   <main id="content" class="app-shell" tabindex="-1">
     <section class="workspace">
-      <search class="query-panel" aria-label="Ask W3C Internationalization sources">
+      <search class="query-panel" data-i18n-aria-label="searchAriaLabel" aria-label="Ask W3C Internationalization sources">
         <form id="ask-form" action="/api/ask" method="post">
           <div class="field">
-            <label for="question">Question</label>
+            <label for="question" data-i18n="questionLabel">Question</label>
             <textarea id="question" name="question" rows="5" minlength="3" required enterkeyhint="send" aria-describedby="question-help">How should I declare UTF-8 character encoding in HTML?</textarea>
             <p id="question-help" class="hint">
-              Answers are grounded only in indexed W3C Internationalization sources.
-              <span class="shortcut-hint"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd> to ask.</span>
+              <span data-i18n="questionHelp">Answers are grounded only in indexed W3C Internationalization sources.</span>
+              <span class="shortcut-hint">
+                <span data-i18n="shortcutHintBefore"></span>
+                <span dir="ltr" class="shortcut-keys"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd></span>
+                <span data-i18n="shortcutHintAfter"> to ask.</span>
+              </span>
             </p>
           </div>
 
           <div class="control-grid">
             <div class="field">
-              <label for="language">Answer language</label>
+              <label for="language" data-i18n="answerLanguageLabel">Answer language</label>
               <select id="language" name="language">
-                <option value="ar">Arabic</option>
+                <option value="ar">العربية</option>
                 <option value="en" selected>English</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="he">Hebrew</option>
-                <option value="ja">Japanese</option>
-                <option value="ko">Korean</option>
-                <option value="zh-hans">Chinese (Simplified)</option>
-                <option value="zh-hant">Chinese (Traditional)</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+                <option value="he">עברית</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="zh-hans">简体中文</option>
+                <option value="zh-hant">繁體中文</option>
               </select>
             </div>
 
             <fieldset class="status-filters">
-              <legend>Source status</legend>
+              <legend data-i18n="statusLegend">Source status</legend>
               <div class="choice-group">
-                <label><input type="checkbox" name="statuses" value="published" checked> Published</label>
-                <label><input type="checkbox" name="statuses" value="review" checked> Review</label>
-                <label><input type="checkbox" name="statuses" value="draft" checked> Draft</label>
+                <label><input type="checkbox" name="statuses" value="published" checked> <span data-i18n="statusPublished">Published</span></label>
+                <label><input type="checkbox" name="statuses" value="review" checked> <span data-i18n="statusReview">Review</span></label>
+                <label><input type="checkbox" name="statuses" value="draft" checked> <span data-i18n="statusDraft">Draft</span></label>
               </div>
             </fieldset>
 
             <fieldset class="obsolete-filter">
-              <legend>Advanced</legend>
+              <legend data-i18n="advancedLegend">Advanced</legend>
               <div class="choice-group">
-                <label><input type="checkbox" id="include-obsolete" name="includeObsolete"> Include obsolete content</label>
+                <label><input type="checkbox" id="include-obsolete" name="includeObsolete"> <span data-i18n="includeObsolete">Include obsolete content</span></label>
               </div>
             </fieldset>
           </div>
 
           <div class="actions">
-            <button id="submit-button" type="submit" aria-keyshortcuts="Control+Enter Meta+Enter">Ask from sources</button>
+            <button id="submit-button" type="submit" aria-keyshortcuts="Control+Enter Meta+Enter" data-i18n="submitButton">Ask from sources</button>
           </div>
         </form>
       </search>
@@ -78,17 +92,17 @@
 
       <section class="answer-panel" aria-labelledby="answer-heading">
         <div class="answer-panel__header">
-          <h2 id="answer-heading">Answer</h2>
+          <h2 id="answer-heading" data-i18n="answerHeading">Answer</h2>
           <!-- <span class="answer-contract">Cited sources required</span> -->
         </div>
         <div id="warnings" class="warnings" aria-live="polite"></div>
         <div id="answer" class="answer-text" dir="auto" aria-busy="false">
-          <p class="answer-placeholder">Ask a question to see an answer with source citations.</p>
+          <p class="answer-placeholder" data-i18n="answerPlaceholder">Ask a question to see an answer with source citations.</p>
         </div>
-        <ol id="citations" class="citation-list" role="list" aria-label="Cited sources"></ol>
+        <ol id="citations" class="citation-list" role="list" data-i18n-aria-label="citationsAriaLabel" aria-label="Cited sources"></ol>
       </section>
     </section>
   </main>
-  <footer id="preview-notice" class="preview-notice" hidden>This is a PR preview.</footer>
+  <footer id="preview-notice" class="preview-notice" data-i18n="previewNotice" hidden>This is a PR preview.</footer>
 </body>
 </html>

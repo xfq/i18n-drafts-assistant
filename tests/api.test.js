@@ -63,6 +63,10 @@ test('HTTP API serves health, retrieval, and cited answers without fetching sour
     assert.equal(syntaxHighlightModule.status, 200);
     assert.match(await syntaxHighlightModule.text(), /highlightCode/);
 
+    const i18nModule = await fetch(`http://127.0.0.1:${port}/i18n.js`);
+    assert.equal(i18nModule.status, 200);
+    assert.match(await i18nModule.text(), /applyUILanguage/);
+
     const retrieved = await fetch(`http://127.0.0.1:${port}/api/retrieve`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

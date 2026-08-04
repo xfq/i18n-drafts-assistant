@@ -1,17 +1,31 @@
 import { highlightCode } from './syntax-highlight.js';
+import { applyUILanguage, detectUILanguage, getUILanguage, t } from './i18n.js';
 
 const form = typeof document === 'undefined' ? null : document.querySelector('#ask-form');
 const questionField = form?.elements.namedItem('question') || null;
 const submitButton = typeof document === 'undefined' ? null : document.querySelector('#submit-button');
+const uiLanguageSelect = typeof document === 'undefined' ? null : document.querySelector('#ui-language');
 const messageArea = typeof document === 'undefined' ? null : document.querySelector('#message-area');
 const warningsEl = typeof document === 'undefined' ? null : document.querySelector('#warnings');
 const answerEl = typeof document === 'undefined' ? null : document.querySelector('#answer');
 const citationsEl = typeof document === 'undefined' ? null : document.querySelector('#citations');
 const healthStatus = typeof document === 'undefined' ? null : document.querySelector('#health-status');
 const previewNotice = typeof document === 'undefined' ? null : document.querySelector('#preview-notice');
-const submitLabel = submitButton?.textContent || 'Ask from sources';
+
+let lastHealth = null;
+let lastResponse = null;
+let lastPayload = null;
 
 if (form) {
+  applyUILanguage(detectUILanguage());
+  if (uiLanguageSelect) {
+    uiLanguageSelect.value = getUILanguage();
+    uiLanguageSelect.addEventListener('change', () => {
+      applyUILanguage(uiLanguageSelect.value);
+      rerenderTranslatedState();
+    });
+  }
+
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     validateQuestion();
@@ -48,30 +62,45 @@ export function isSendShortcut(event) {
 
 function validateQuestion() {
   const question = questionField.value.trim();
-  questionField.setCustomValidity(question.length >= 3 ? '' : 'Enter at least 3 characters.');
+  questionField.setCustomValidity(question.length >= 3 ? '' : t('validationMinLength'));
 }
 
 async function loadHealth() {
   try {
     const health = await fetchJson('/api/health');
-    if (previewNotice) {
-      previewNotice.hidden = !health.is_pull_request;
-      document.body.classList.toggle('has-preview-notice', Boolean(health.is_pull_request));
-    }
-    healthStatus.textContent = health.ok
-      ? `Indexed ${health.indexed_documents} documents and ${health.indexed_chunks} chunks from ${health.source_ref}${health.source_commit ? ` (${health.source_commit.slice(0, 8)})` : ''}.`
-      : 'No index is loaded. Run npm run index before asking questions.';
+    lastHealth = health;
+    renderHealth(health);
   } catch (error) {
-    healthStatus.textContent = `Health check failed: ${error.message}`;
+    lastHealth = { error: error.message };
+    healthStatus.textContent = t('healthCheckFailed', { message: error.message });
+  }
+}
+
+function renderHealth(health) {
+  if (previewNotice) {
+    previewNotice.hidden = !health.is_pull_request;
+    document.body.classList.toggle('has-preview-notice', Boolean(health.is_pull_request));
+  }
+  if (health.ok) {
+    const source = health.source_commit
+      ? `${health.source_ref} (${health.source_commit.slice(0, 8)})`
+      : health.source_ref;
+    healthStatus.textContent = t('healthIndexed', {
+      documents: health.indexed_documents,
+      chunks: health.indexed_chunks,
+      source
+    });
+  } else {
+    healthStatus.textContent = t('healthNoIndex');
   }
 }
 
 async function ask() {
-  setLoading('Retrieving W3C i18n sources and composing a cited answer...');
+  setLoading(t('loadingMessage'));
   form.setAttribute('aria-busy', 'true');
   answerEl.setAttribute('aria-busy', 'true');
   submitButton.disabled = true;
-  submitButton.textContent = 'Asking...';
+  submitButton.textContent = t('asking');
 
   try {
     const payload = formPayload();
@@ -81,16 +110,34 @@ async function ask() {
       body: JSON.stringify(payload)
     });
 
+    lastResponse = response;
+    lastPayload = payload;
     renderAnswer(response, payload.language);
-    setMessage(response.evidence_status === 'insufficient_evidence' ? 'No supported answer was found.' : '', '');
+    setMessage(response.evidence_status === 'insufficient_evidence' ? t('noSupportedAnswer') : '', '');
   } catch (error) {
     setMessage(error.message, 'error');
   } finally {
     submitButton.disabled = false;
-    submitButton.textContent = submitLabel;
+    submitButton.textContent = t('submitButton');
     form.setAttribute('aria-busy', 'false');
     answerEl.setAttribute('aria-busy', 'false');
   }
+}
+
+function rerenderTranslatedState() {
+  if (uiLanguageSelect) uiLanguageSelect.value = getUILanguage();
+  validateQuestion();
+  if (lastHealth) {
+    if (lastHealth.error) {
+      healthStatus.textContent = t('healthCheckFailed', { message: lastHealth.error });
+    } else {
+      renderHealth(lastHealth);
+    }
+  }
+  if (lastResponse && lastPayload) {
+    renderAnswer(lastResponse, lastPayload.language);
+  }
+  submitButton.textContent = t('submitButton');
 }
 
 function formPayload() {
@@ -106,7 +153,7 @@ function formPayload() {
 function renderAnswer(response, language) {
   warningsEl.replaceChildren(...(response.warnings || []).map(renderWarning));
   answerEl.lang = language;
-  renderMarkdownInto(answerEl, response.answer || 'No answer could be generated from the selected sources.');
+  renderMarkdownInto(answerEl, response.answer || t('noAnswerGenerated'));
   citationsEl.replaceChildren(...(response.citations || []).map(renderCitation));
 }
 
@@ -114,7 +161,7 @@ function renderWarning(warning) {
   const element = document.createElement('div');
   element.className = 'warning';
   const label = document.createElement('strong');
-  label.textContent = 'Warning';
+  label.textContent = t('warning');
   const message = document.createElement('span');
   message.textContent = warning.message;
   element.append(label, message);
@@ -140,7 +187,7 @@ function renderCitation(citation, index) {
   const link = document.createElement('a');
   link.href = citation.url;
   link.target = '_blank';
-  link.setAttribute('aria-label', `Open source: ${citation.label}`);
+  link.setAttribute('aria-label', t('openSource', { label: citation.label }));
   link.textContent = citation.url;
 
   card.append(heading, meta, link);
@@ -157,28 +204,30 @@ function badge(label, className = '') {
 function languageNode(value) {
   const element = document.createElement('span');
   element.className = 'source-language';
-  element.textContent = value ? `Language: ${value}` : 'Language unknown';
+  element.textContent = value ? t('languageLabel', { value }) : t('languageUnknown');
   return element;
 }
 
 function statusLabel(status) {
-  return {
-    published: 'Published',
-    review: 'Review',
-    draft: 'Draft',
-    notreviewed: 'Not reviewed',
-    obsolete: 'Obsolete'
-  }[status] || status || 'Unknown';
+  const labels = {
+    published: t('statusPublished'),
+    review: t('statusReview'),
+    draft: t('statusDraft'),
+    notreviewed: t('statusNotReviewed'),
+    obsolete: t('statusObsolete')
+  };
+  return labels[status] || status || t('statusUnknown');
 }
 
 function translationLabel(state) {
-  return {
-    current: 'Current translation',
-    out_of_date: 'Out-of-date translation',
-    updated: 'Updated translation',
-    unlinked: 'Unlinked translation',
-    unknown: 'Translation state unknown'
-  }[state] || state || 'Translation state unknown';
+  const labels = {
+    current: t('translationCurrent'),
+    out_of_date: t('translationOutOfDate'),
+    updated: t('translationUpdated'),
+    unlinked: t('translationUnlinked'),
+    unknown: t('translationUnknown')
+  };
+  return labels[state] || state || t('translationUnknown');
 }
 
 function setLoading(message) {
@@ -195,7 +244,7 @@ async function fetchJson(url, options) {
   const response = await fetch(url, options);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error || `Request failed with HTTP ${response.status}`);
+    throw new Error(data.error || t('requestFailed', { status: response.status }));
   }
   return data;
 }

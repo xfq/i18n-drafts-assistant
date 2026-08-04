@@ -273,7 +273,7 @@ async function serveStatic(request, response, url) {
   }
 
   const path = url.pathname === '/' ? '/index.html' : url.pathname;
-  if (!['/index.html', '/styles.css', '/app.js', '/markdown.js', '/syntax-highlight.js'].includes(path)) {
+  if (!['/index.html', '/styles.css', '/app.js', '/i18n.js', '/markdown.js', '/syntax-highlight.js'].includes(path)) {
     response.writeHead(404);
     response.end('Not found');
     return;
