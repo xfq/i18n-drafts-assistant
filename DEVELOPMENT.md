@@ -43,7 +43,7 @@ The browser receives the files in `public/` directly from the Node server.
 - `src/generation/`: prompt construction, local extractive answer generation, optional OpenAI-compatible model calls, citation construction, citation validation, and answer warnings.
 - `src/rate-limit.js`: in-memory API rate limiting keyed by direct client IP or a trusted forwarded client IP.
 - `src/evals/`: deterministic evaluation cases for retrieval and answer behavior against an existing index.
-- `public/`: static HTML, CSS, and browser JavaScript for the public UI, including `i18n.js` (UI message dictionaries and language/direction switching for the interface).
+- `public/`: static HTML, CSS, and browser JavaScript for the public UI, including `i18n.js` (UI message dictionaries and language/direction switching for the interface). The answer-language selector defaults to the interface language on load and whenever the interface language changes, until the user picks an answer language explicitly.
 - `tests/`: Node test files plus `tests/fixtures/i18n-mini`, a minimal i18n-drafts-like corpus, and `tests/e2e/`, Playwright browser tests for the ask flow.
 - `playwright.config.js`: Playwright E2E configuration.
 - `.cache/`: ignored local source checkout/cache when `SOURCE_MODE=git`.

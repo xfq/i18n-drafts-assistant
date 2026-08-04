@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { isEnglishLanguage, isSendShortcut } from '../public/app.js';
+import { defaultAnswerLanguageForUI, isEnglishLanguage, isSendShortcut } from '../public/app.js';
+
+test('the default answer language follows the interface language', () => {
+  assert.equal(defaultAnswerLanguageForUI('en'), 'en');
+  assert.equal(defaultAnswerLanguageForUI('zh-hans'), 'zh-hans');
+  assert.equal(defaultAnswerLanguageForUI('fr'), null);
+});
 
 test('public UI omits the retired retrieved-sources panel', async () => {
   const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');

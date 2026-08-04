@@ -5,6 +5,7 @@ const form = typeof document === 'undefined' ? null : document.querySelector('#a
 const questionField = form?.elements.namedItem('question') || null;
 const submitButton = typeof document === 'undefined' ? null : document.querySelector('#submit-button');
 const uiLanguageSelect = typeof document === 'undefined' ? null : document.querySelector('#ui-language');
+const answerLanguageSelect = form?.elements.namedItem('language') || null;
 const messageArea = typeof document === 'undefined' ? null : document.querySelector('#message-area');
 const warningsEl = typeof document === 'undefined' ? null : document.querySelector('#warnings');
 const answerEl = typeof document === 'undefined' ? null : document.querySelector('#answer');
@@ -15,16 +16,39 @@ const previewNotice = typeof document === 'undefined' ? null : document.querySel
 let lastHealth = null;
 let lastResponse = null;
 let lastPayload = null;
+let answerLanguageTouched = false;
+
+const DEFAULT_ANSWER_LANGUAGE = {
+  en: 'en',
+  'zh-hans': 'zh-hans'
+};
+
+export function defaultAnswerLanguageForUI(uiLanguage) {
+  return DEFAULT_ANSWER_LANGUAGE[uiLanguage] ?? null;
+}
+
+function syncAnswerLanguageToUI(uiLanguage) {
+  if (!answerLanguageSelect || answerLanguageTouched) return;
+  const defaultLanguage = defaultAnswerLanguageForUI(uiLanguage);
+  if (defaultLanguage) answerLanguageSelect.value = defaultLanguage;
+}
 
 if (form) {
   applyUILanguage(detectUILanguage());
+  syncAnswerLanguageToUI(getUILanguage());
   updateQuestionSample();
   if (uiLanguageSelect) {
     uiLanguageSelect.value = getUILanguage();
     uiLanguageSelect.addEventListener('change', () => {
       applyUILanguage(uiLanguageSelect.value);
+      syncAnswerLanguageToUI(getUILanguage());
       updateQuestionSample();
       rerenderTranslatedState();
+    });
+  }
+  if (answerLanguageSelect) {
+    answerLanguageSelect.addEventListener('change', () => {
+      answerLanguageTouched = true;
     });
   }
 

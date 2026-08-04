@@ -28,6 +28,27 @@ test('switching the UI language localizes the interface', async ({ page }) => {
   await expect(page.locator('#question')).toHaveValue(UTF8_QUESTION);
 });
 
+test('switching the UI language defaults the answer language to match', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.locator('#language')).toHaveValue('en');
+
+  await page.locator('#ui-language').selectOption('zh-hans');
+  await expect(page.locator('#language')).toHaveValue('zh-hans');
+
+  await page.locator('#ui-language').selectOption('en');
+  await expect(page.locator('#language')).toHaveValue('en');
+});
+
+test('a manually chosen answer language survives UI language switches', async ({ page }) => {
+  await page.goto('/');
+
+  await page.locator('#language').selectOption('fr');
+  await page.locator('#ui-language').selectOption('zh-hans');
+
+  await expect(page.locator('#language')).toHaveValue('fr');
+});
+
 test('switching the UI language preserves a typed question', async ({ page }) => {
   await page.goto('/');
 
