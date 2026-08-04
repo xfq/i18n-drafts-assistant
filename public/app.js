@@ -82,13 +82,9 @@ function renderHealth(health) {
     document.body.classList.toggle('has-preview-notice', Boolean(health.is_pull_request));
   }
   if (health.ok) {
-    const source = health.source_commit
-      ? `${health.source_ref} (${health.source_commit.slice(0, 8)})`
-      : health.source_ref;
     healthStatus.textContent = t('healthIndexed', {
       documents: health.indexed_documents,
-      chunks: health.indexed_chunks,
-      source
+      chunks: health.indexed_chunks
     });
   } else {
     healthStatus.textContent = t('healthNoIndex');

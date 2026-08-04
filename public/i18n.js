@@ -34,7 +34,7 @@ export const MESSAGES = {
     previewNotice: 'This is a PR preview.',
     uiLanguageLabel: 'Language: ',
     validationMinLength: 'Enter at least 3 characters.',
-    healthIndexed: 'Indexed {documents} documents and {chunks} chunks from {source}.',
+    healthIndexed: 'Indexed {documents} documents and {chunks} chunks.',
     healthNoIndex: 'No index is loaded. Run npm run index before asking questions.',
     healthCheckFailed: 'Health check failed: {message}',
     loadingMessage: 'Retrieving W3C i18n sources and composing a cited answer…',
@@ -79,7 +79,7 @@ export const MESSAGES = {
     previewNotice: '这是拉取请求的预览。',
     uiLanguageLabel: '界面语言',
     validationMinLength: '请输入至少 3 个字符。',
-    healthIndexed: '已从 {source} 索引 {documents} 个文档和 {chunks} 个片段。',
+    healthIndexed: '已索引{documents}个文档和{chunks}个片段',
     healthNoIndex: '未加载索引。提问前请先运行 npm run index。',
     healthCheckFailed: '健康检查失败：{message}',
     loadingMessage: '正在检索W3C国际化的相关材料并撰写带引用的回答……',
@@ -98,7 +98,7 @@ export const MESSAGES = {
     translationUpdated: '已更新翻译',
     translationUnlinked: '未关联翻译',
     translationUnknown: '翻译状态未知',
-    requestFailed: '请求失败，HTTP 状态码 {status}'
+    requestFailed: '请求失败，HTTP状态码{status}'
   }
 };
 

@@ -37,8 +37,8 @@ test('t() defaults to English and falls back to the key when missing', () => {
 
 test('t() interpolates named parameters', () => {
   applyUILanguage('zh-hans');
-  assert.equal(t('requestFailed', { status: 429 }), '请求失败，HTTP 状态码 429');
-  assert.equal(t('healthIndexed', { documents: 3, chunks: 12, source: 'main' }), '已从 main 索引 3 个文档和 12 个片段。');
+  assert.equal(t('requestFailed', { status: 429 }), '请求失败，HTTP状态码429');
+  assert.equal(t('healthIndexed', { documents: 3, chunks: 12 }), '已索引3个文档和12个片段');
   applyUILanguage('en');
 });
 
