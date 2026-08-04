@@ -26,6 +26,7 @@ Keep this choice unless the product grows into a larger multi-page application, 
   `node src/indexing/indexer.js`.
 - `npm run eval` runs `node src/evals/run.js`.
 - `npm test` runs the Node built-in test runner over `tests/*.test.js`.
+- `npm run test:e2e` runs Playwright browser tests over `tests/e2e/`.
 
 There is no bundler, transpiler, database server, or client-side build pipeline.
 The browser receives the files in `public/` directly from the Node server.
@@ -43,7 +44,8 @@ The browser receives the files in `public/` directly from the Node server.
 - `src/rate-limit.js`: in-memory API rate limiting keyed by direct client IP or a trusted forwarded client IP.
 - `src/evals/`: deterministic evaluation cases for retrieval and answer behavior against an existing index.
 - `public/`: static HTML, CSS, and browser JavaScript for the public UI, including `i18n.js` (UI message dictionaries and language/direction switching for the interface).
-- `tests/`: Node test files plus `tests/fixtures/i18n-mini`, a minimal i18n-drafts-like corpus.
+- `tests/`: Node test files plus `tests/fixtures/i18n-mini`, a minimal i18n-drafts-like corpus, and `tests/e2e/`, Playwright browser tests for the ask flow.
+- `playwright.config.js`: Playwright E2E configuration.
 - `.cache/`: ignored local source checkout/cache when `SOURCE_MODE=git`.
 - `.data/`: ignored local index and query log outputs.
 
@@ -105,6 +107,19 @@ Run the full test suite with:
 ```sh
 npm test
 ```
+
+Run the Playwright browser tests (one-time browser install first):
+
+```sh
+npx playwright install chromium firefox webkit
+npm run test:e2e
+```
+
+The Playwright config starts the real server (`npm run index && npm start`) against the `i18n-mini` fixture with environment overrides in `playwright.config.js` (port 4123, `.data/e2e-index.json`, local model provider, relaxed rate limit).
+
+The E2E tests cover the ask flow, UI and answer language switching, validation, the keyboard shortcut, and the insufficient-evidence state.
+
+The static `tests/public-ui.test.js` checks remain as contract checks for markup and accessibility attributes.
 
 ## Pull Request Previews
 

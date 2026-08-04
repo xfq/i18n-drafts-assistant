@@ -85,6 +85,7 @@ TRUSTED_PROXIES=127.0.0.1/32,::1
 
 ```sh
 npm test
+npm run test:e2e
 npm run index
 npm run rag:index
 npm run eval
@@ -97,6 +98,9 @@ npm run start
 npm run index -- --source-mode=local --source-repo-path=tests/fixtures/i18n-mini
 npm run eval
 ```
+
+Playwright E2E 测试使用同样的 fixture 语料，并启动真实服务。先安装一次浏览器：
+`npx playwright install chromium firefox webkit`，然后运行 `npm run test:e2e`。
 
 ## 社区API
 

@@ -85,6 +85,7 @@ When this is unset, rate limiting deliberately uses the direct socket address on
 
 ```sh
 npm test
+npm run test:e2e
 npm run index
 npm run rag:index
 npm run eval
@@ -97,6 +98,8 @@ For fixture development:
 npm run index -- --source-mode=local --source-repo-path=tests/fixtures/i18n-mini
 npm run eval
 ```
+
+Playwright E2E tests use the same fixture corpus and start the real server. Install browsers once with `npx playwright install chromium firefox webkit`, then run `npm run test:e2e`.
 
 ## Community API
 

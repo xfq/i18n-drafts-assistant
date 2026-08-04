@@ -1,0 +1,72 @@
+import { test, expect } from '@playwright/test';
+
+const UTF8_QUESTION = 'How should I declare UTF-8 character encoding in HTML?';
+
+test('ask flow renders a cited answer from the indexed sources', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.locator('#health-status')).toContainText('4 documents and 5 chunks');
+
+  await page.locator('#submit-button').click();
+
+  await expect(page.locator('#answer')).toContainText('UTF-8');
+  const citation = page.locator('#citation-1');
+  await expect(citation).toBeVisible();
+  await expect(citation.locator('a')).toHaveAttribute('href', /http-charset/);
+});
+
+test('switching the UI language localizes the interface', async ({ page }) => {
+  await page.goto('/');
+
+  await page.locator('#ui-language').selectOption('zh-hans');
+
+  await expect(page.locator('#submit-button')).toHaveText('提问');
+  await expect(page.locator('label[for="question"]')).toHaveText('问题');
+});
+
+test('answer language follows the selected answer language', async ({ page }) => {
+  await page.goto('/');
+
+  await page.locator('#language').selectOption('zh-hans');
+  await page.locator('#submit-button').click();
+  await expect(page.locator('#answer')).toHaveAttribute('lang', 'zh-hans');
+
+  await page.locator('#language').selectOption('ar');
+  await page.locator('#submit-button').click();
+  await expect(page.locator('#answer')).toHaveAttribute('lang', 'ar');
+  await expect(page.locator('#answer')).toHaveAttribute('dir', 'auto');
+});
+
+test('a whitespace-only question shows a validation error without sending a request', async ({ page }) => {
+  let askRequests = 0;
+  page.on('request', (request) => {
+    if (request.url().includes('/api/ask')) askRequests += 1;
+  });
+
+  await page.goto('/');
+  await page.locator('#question').fill('   ');
+  await page.locator('#submit-button').click();
+
+  await expect(page.locator('#message-area')).toHaveText('Enter at least 3 characters.');
+  await expect(page.locator('#answer')).toContainText('Ask a question to see an answer');
+  expect(askRequests).toBe(0);
+});
+
+test('Control+Enter submits the question', async ({ page }) => {
+  await page.goto('/');
+
+  await page.locator('#question').press('Control+Enter');
+
+  await expect(page.locator('#answer')).toContainText('UTF-8');
+});
+
+test('a question unsupported by the index shows the no-answer state', async ({ page }) => {
+  await page.goto('/');
+
+  await page.locator('#question').fill('banana recipes for breakfast');
+  await page.locator('#submit-button').click();
+
+  await expect(page.locator('#message-area')).toHaveText('No supported answer was found.');
+  await expect(page.locator('#answer')).toContainText('I could not find enough support');
+  await expect(page.locator('#citations')).toBeEmpty();
+});
