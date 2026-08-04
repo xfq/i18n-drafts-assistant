@@ -21,7 +21,6 @@ export function getConfig(overrides = {}) {
     modelApiKey: firstDefined(overrides.modelApiKey, env.MODEL_API_KEY, ''),
     modelBaseUrl: firstDefined(overrides.modelBaseUrl, env.MODEL_BASE_URL, ''),
     modelTimeoutMs: Number(firstDefined(overrides.modelTimeoutMs, env.MODEL_TIMEOUT_MS, 30_000)),
-    embeddingModel: firstDefined(overrides.embeddingModel, env.EMBEDDING_MODEL, 'local-hashed-vector'),
     generationModel: firstDefined(overrides.generationModel, env.GENERATION_MODEL, ''),
     databaseUrl: firstDefined(overrides.databaseUrl, env.DATABASE_URL, '.data/index.json'),
     enableDebug: parseBoolean(overrides.enableDebug ?? env.ENABLE_DEBUG ?? false),
