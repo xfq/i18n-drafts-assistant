@@ -30,7 +30,7 @@ test('t() defaults to English and falls back to the key when missing', () => {
   applyUILanguage('en');
   assert.equal(t('submitButton'), 'Ask from sources');
   applyUILanguage('zh-hans');
-  assert.equal(t('submitButton'), '向来源提问');
+  assert.equal(t('submitButton'), '提问');
   assert.equal(t('missing-key'), 'missing-key');
   applyUILanguage('en');
 });
@@ -58,7 +58,7 @@ test('unsupported language codes fall back to English', () => {
 test('language codes are normalized to lowercase', () => {
   assert.equal(isSupportedUILanguage('ZH-HANS'), true);
   assert.equal(applyUILanguage('ZH-HANS'), 'zh-hans');
-  assert.equal(t('submitButton'), '向来源提问');
+  assert.equal(t('submitButton'), '提问');
   applyUILanguage('en');
 });
 

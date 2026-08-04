@@ -98,7 +98,7 @@ export const MESSAGES = {
     translationUpdated: '已更新翻译',
     translationUnlinked: '未关联翻译',
     translationUnknown: '翻译状态未知',
-    requestFailed: '请求失败，HTTP状态码 {status}'
+    requestFailed: '请求失败，HTTP 状态码 {status}'
   }
 };
 
