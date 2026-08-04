@@ -64,7 +64,7 @@ export const MESSAGES = {
     projectNoticeText: '本项目是薛富侨的个人实验性项目，不是W3C官方服务。',
     searchAriaLabel: '向W3C国际化提问',
     questionLabel: '问题',
-    sampleQuestion: '如何在HTML中声明UTF-8编码？',
+    sampleQuestion: '如何在HTML中设置内容的语言？',
     questionHelp: '回答仅基于已索引的W3C国际化来源。',
     shortcutHintBefore: '',
     shortcutHintAfter: ' 提问',

@@ -22,7 +22,7 @@ test('switching the UI language localizes the interface', async ({ page }) => {
 
   await expect(page.locator('#submit-button')).toHaveText('提问');
   await expect(page.locator('label[for="question"]')).toHaveText('问题');
-  await expect(page.locator('#question')).toHaveValue('如何在HTML中声明UTF-8编码？');
+  await expect(page.locator('#question')).toHaveValue('如何在HTML中设置内容的语言？');
 
   await page.locator('#ui-language').selectOption('en');
   await expect(page.locator('#question')).toHaveValue(UTF8_QUESTION);
