@@ -35,7 +35,8 @@ test('public UI defaults the answer language to English', async () => {
 test('public UI opens the W3C reference link in a new window', async () => {
   const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 
-  assert.match(page, /<a class="header-link" href="https:\/\/www\.w3\.org\/International\/" target="_blank">/);
+  assert.match(page, /<a class="header-link"[^>]*href="https:\/\/www\.w3\.org\/International\/"[^>]*target="_blank"/);
+  assert.match(page, /<a class="header-link"[^>]*data-i18n="headerLink"/);
 });
 
 test('citation source links open in a new window', async () => {
