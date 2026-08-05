@@ -216,7 +216,7 @@ Answer响应的结构如下：
 
 ## 日志
 
-查询日志以JSONL格式存储在`.data/query-log.jsonl`中，记录问题文本、所选语言、过滤条件、检索源ID、证据状态、延迟和错误类型，不存储API密钥或账户标识。
+查询日志以JSONL格式存储在`.data/query-log.jsonl`中，记录问题文本、所选语言、过滤条件、检索源ID、证据状态、延迟和错误类型，不存储API密钥或账户标识。日志按大小轮转：文件超过`QUERY_LOG_MAX_BYTES`（默认10 MiB）时重命名为`query-log.jsonl.1`，旧备份依次后移，`QUERY_LOG_BACKUPS`（默认3）限制保留的轮转文件数量。
 
 ## 许可证
 

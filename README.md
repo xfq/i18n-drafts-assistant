@@ -215,7 +215,7 @@ CORS is enabled for the community API. The same in-memory rate limiter applies t
 
 ## Logs
 
-Query logs are JSONL at `.data/query-log.jsonl` and store question text, selected language, filters, retrieved source ids, evidence status, latency, and error type. They do not store API keys or account identifiers.
+Query logs are JSONL at `.data/query-log.jsonl` and store question text, selected language, filters, retrieved source ids, evidence status, latency, and error type. They do not store API keys or account identifiers. The log rotates by size: once the file exceeds `QUERY_LOG_MAX_BYTES` (default 10 MiB), it is renamed to `query-log.jsonl.1` and older backups shift down, with `QUERY_LOG_BACKUPS` (default 3) bounding how many rotated files are kept.
 
 ## License
 

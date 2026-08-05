@@ -7,6 +7,8 @@ export function getConfig(overrides = {}) {
     port: Number(firstDefined(overrides.port, env.PORT, 3000)),
     indexPath: firstDefined(overrides.indexPath, env.INDEX_PATH, '.data/index.json'),
     queryLogPath: firstDefined(overrides.queryLogPath, env.QUERY_LOG_PATH, '.data/query-log.jsonl'),
+    queryLogMaxBytes: Number(firstDefined(overrides.queryLogMaxBytes, env.QUERY_LOG_MAX_BYTES, 10 * 1024 * 1024)),
+    queryLogBackups: Number(firstDefined(overrides.queryLogBackups, env.QUERY_LOG_BACKUPS, 3)),
     sourceMode: firstDefined(overrides.sourceMode, env.SOURCE_MODE, 'git'),
     sourceRepoPath: firstDefined(overrides.sourceRepoPath, env.SOURCE_REPO_PATH, ''),
     sourceRepoUrl: firstDefined(overrides.sourceRepoUrl, env.SOURCE_REPO_URL, 'https://github.com/w3c/i18n-drafts.git'),

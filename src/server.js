@@ -136,7 +136,10 @@ async function handleApi({ request, response, url, state, config, indexer }) {
       evidence_status: answer.evidence_status,
       latency_ms: Date.now() - started,
       error_type: answer.evidence_status === 'error' ? 'generation' : ''
-    }, config.queryLogPath).catch(() => {});
+    }, config.queryLogPath, {
+      maxBytes: config.queryLogMaxBytes,
+      backups: config.queryLogBackups
+    }).catch(() => {});
 
     if (answer.evidence_status === 'error') {
       throw publicApiError(502, 'generation_error', answer.error || 'Answer generation failed.');
@@ -210,7 +213,10 @@ async function handleApi({ request, response, url, state, config, indexer }) {
       evidence_status: answer.evidence_status,
       latency_ms: Date.now() - started,
       error_type: answer.evidence_status === 'error' ? 'generation' : ''
-    }, config.queryLogPath).catch(() => {});
+    }, config.queryLogPath, {
+      maxBytes: config.queryLogMaxBytes,
+      backups: config.queryLogBackups
+    }).catch(() => {});
 
     sendJson(response, answer.evidence_status === 'error' ? 502 : 200, answer);
     return;

@@ -7,6 +7,8 @@ import { getConfig, parseEnvFileContent } from '../src/config.js';
 
 const touchedKeys = [
   'PORT',
+  'QUERY_LOG_MAX_BYTES',
+  'QUERY_LOG_BACKUPS',
   'SOURCE_MODE',
   'SOURCE_REPO_PATH',
   'SOURCE_REF',
@@ -30,6 +32,8 @@ test('getConfig loads values from a .env file', async () => {
     'MODEL_PROVIDER=openai-compatible',
     'MODEL_API_KEY=server-side-secret',
     'MODEL_TIMEOUT_MS=12345',
+    'QUERY_LOG_MAX_BYTES=5242880',
+    'QUERY_LOG_BACKUPS=5',
     'IS_PULL_REQUEST=true',
     'TRUSTED_PROXIES=127.0.0.1/32, ::1'
   ].join('\n'));
@@ -45,6 +49,8 @@ test('getConfig loads values from a .env file', async () => {
     assert.equal(config.modelProvider, 'openai-compatible');
     assert.equal(config.modelApiKey, 'server-side-secret');
     assert.equal(config.modelTimeoutMs, 12345);
+    assert.equal(config.queryLogMaxBytes, 5242880);
+    assert.equal(config.queryLogBackups, 5);
     assert.equal(config.isPullRequest, true);
     assert.deepEqual(config.trustedProxies, ['127.0.0.1/32', '::1']);
   });

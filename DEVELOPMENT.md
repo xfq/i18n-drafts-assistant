@@ -57,7 +57,7 @@ Each entry in `SOURCES` can restrict discovery with `contentRoots`, relax the no
 
 ## Query Pipeline
 
-The query path starts in `src/server.js`. The versioned community API lives under `/api/v1` and uses `src/api/community.js` to keep the public contract separate from internal debug/UI endpoints.
+The query path starts in `src/server.js`. The versioned community API lives under `/api/v1` and uses `src/api/community.js` to keep the public contract separate from internal debug/UI endpoints. Query metadata is appended to `config.queryLogPath`; the log rotates once it exceeds `config.queryLogMaxBytes` (env `QUERY_LOG_MAX_BYTES`, default 10 MiB), keeping `config.queryLogBackups` (env `QUERY_LOG_BACKUPS`, default 3) rotated files.
 
 Public community endpoints:
 
