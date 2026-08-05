@@ -133,6 +133,35 @@ test('rate limiter reclaims expired one-shot buckets at the cap without dropping
   assert.equal(firstClientAgain.allowed, true);
 });
 
+test('rate limiter evicts an active bucket at the cap so the map stays bounded', () => {
+  let fakeNow = 1_000;
+  const limiter = createRateLimiter(60_000, 2, { now: () => fakeNow, maxBuckets: 3 });
+
+  const first = applyLimit(limiter, { remoteAddress: '198.51.100.1' });
+  const second = applyLimit(limiter, { remoteAddress: '198.51.100.2' });
+  const third = applyLimit(limiter, { remoteAddress: '198.51.100.3' });
+  // Cap reached with every bucket still active: the next visitor evicts the
+  // earliest-expiring bucket instead of growing the map.
+  const fourth = applyLimit(limiter, { remoteAddress: '198.51.100.4' });
+  // The evicted client gets a fresh window, not a continued count.
+  const firstAgain = applyLimit(limiter, { remoteAddress: '198.51.100.1' });
+  // Keep cycling far beyond the cap: every visitor is still served.
+  let allAllowed = true;
+  for (let index = 5; index <= 50; index += 1) {
+    const result = applyLimit(limiter, { remoteAddress: `198.51.100.${index}` });
+    allAllowed &&= result.allowed;
+  }
+  const firstMuchLater = applyLimit(limiter, { remoteAddress: '198.51.100.1' });
+
+  assert.equal(first.allowed, true);
+  assert.equal(second.allowed, true);
+  assert.equal(third.allowed, true);
+  assert.equal(fourth.allowed, true);
+  assert.equal(firstAgain.allowed, true);
+  assert.equal(allAllowed, true);
+  assert.equal(firstMuchLater.allowed, true);
+});
+
 function applyLimit(limiter, { remoteAddress, headers = {} }) {
   const response = {
     statusCode: null,

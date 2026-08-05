@@ -21,8 +21,13 @@ export function createRateLimiter(windowMs, maxRequests, {
       // entry so returning clients do not accumulate old buckets forever.
       if (bucket) buckets.delete(key);
       // Once the map reaches its cap, reclaim expired entries from one-shot
-      // visitors to keep memory bounded.
-      if (buckets.size >= maxBuckets) pruneExpiredBuckets(buckets, currentTime);
+      // visitors first; if every bucket is still active, evict the bucket
+      // whose window expires soonest so the map stays strictly bounded even
+      // under a flood of concurrent clients.
+      if (buckets.size >= maxBuckets) {
+        const reclaimed = pruneExpiredBuckets(buckets, currentTime);
+        if (reclaimed === 0) evictEarliestExpiringBucket(buckets);
+      }
       bucket = { count: 0, resetAt: currentTime + windowMs };
       buckets.set(key, bucket);
     }
@@ -38,9 +43,28 @@ export function createRateLimiter(windowMs, maxRequests, {
 }
 
 export function pruneExpiredBuckets(buckets, currentTime) {
+  let reclaimed = 0;
   for (const [key, bucket] of buckets) {
-    if (currentTime > bucket.resetAt) buckets.delete(key);
+    if (currentTime > bucket.resetAt) {
+      buckets.delete(key);
+      reclaimed += 1;
+    }
   }
+  return reclaimed;
+}
+
+function evictEarliestExpiringBucket(buckets) {
+  let earliestKey = null;
+  let earliestResetAt = Number.POSITIVE_INFINITY;
+
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt < earliestResetAt) {
+      earliestResetAt = bucket.resetAt;
+      earliestKey = key;
+    }
+  }
+
+  if (earliestKey !== null) buckets.delete(earliestKey);
 }
 
 function sendRateLimitExceeded(_request, response) {
