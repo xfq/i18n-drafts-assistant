@@ -57,17 +57,17 @@ export function retrieve({
     .filter((chunk) => chunk.score > 0);
 
   const afterRanking = beforeRanking
-    .map((chunk) => ({
-      ...chunk,
-      score: round(chunk.base_score + languageBoost(chunk, requestedLanguage) + statusBoost(chunk.status) + translationBoost(chunk))
-    }))
-    .sort((a, b) => b.score - a.score);
+   .map((chunk) => ({
+     ...chunk,
+     score: round(chunk.base_score + languageBoost(chunk, requestedLanguage) + statusBoost(chunk.status) + translationBoost(chunk))
+   }))
+   .sort((a, b) => b.score - a.score);
 
-  const withTranslations = addTranslationCounterparts(afterRanking, chunks, requestedLanguage, limit);
+  const withTranslations = addTranslationCounterparts(afterRanking, chunks, requestedLanguage, limit, allowedStatuses, includeObsolete);
 
   const finalResults = withTranslations
-    .slice(0, limit)
-    .map((chunk, index) => ({ ...chunk, rank: index + 1 }));
+   .slice(0, limit)
+   .map((chunk, index) => ({ ...chunk, rank: index + 1 }));
 
   return {
     query,
@@ -251,7 +251,7 @@ function publicChunk(chunk) {
   return result;
 }
 
-function addTranslationCounterparts(afterRanking, allChunks, requestedLanguage, limit) {
+function addTranslationCounterparts(afterRanking, allChunks, requestedLanguage, limit, allowedStatuses, includeObsolete) {
   if (requestedLanguage === 'en') return afterRanking;
 
   // Only check top results — low-scoring translated chunks in the tail
@@ -277,6 +277,7 @@ function addTranslationCounterparts(afterRanking, allChunks, requestedLanguage, 
   for (const chunk of allChunks) {
     const gid = chunk.translation_group_id;
     if (!gid || !groups.has(gid) || chunk.language !== requestedLanguage) continue;
+    if (!statusAllowed(chunk.status, allowedStatuses, includeObsolete)) continue;
 
     // Cap per-group translated chunks so one page does not dominate
     // the results. The cap matches the number of English chunks from

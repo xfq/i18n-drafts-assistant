@@ -276,14 +276,27 @@ function printSummary(index) {
   console.log(`Errors: ${index.summary.error_count}`);
 }
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const updates = {};
-  for (const arg of argv) {
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
     if (!arg.startsWith('--')) continue;
-    const [rawKey, ...valueParts] = arg.slice(2).split('=');
-    const value = valueParts.length > 0 ? valueParts.join('=') : 'true';
-    const key = rawKey.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-    updates[key] = value;
+    if (arg.includes('=')) {
+      const [rawKey, ...valueParts] = arg.slice(2).split('=');
+      const value = valueParts.join('=');
+      const key = rawKey.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+      updates[key] = value;
+    } else {
+      const rawKey = arg.slice(2);
+      const key = rawKey.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+      const nextArg = argv[index + 1];
+      if (nextArg && !nextArg.startsWith('--')) {
+        updates[key] = nextArg;
+        index += 1;
+      } else {
+        updates[key] = 'true';
+      }
+    }
   }
   return updates;
 }

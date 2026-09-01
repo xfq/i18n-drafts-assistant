@@ -242,3 +242,45 @@ test('retrieval ranks the language-declaration page for a Chinese query with Lat
   assert(result.results[0].matched_tokens.includes('语'));
   assert(result.results[0].matched_tokens.includes('言'));
 });
+
+test('translated counterpart promotion respects status filters and does not leak obsolete translations', () => {
+  const testChunks = [
+    {
+      chunk_id: 'articles/test-article/index.en.html#section',
+      source_path: 'articles/test-article/index.en.html',
+      translation_group_id: 'articles/test-article/index',
+      section_url: 'https://www.w3.org/International/articles/test-article/#section',
+      title: 'Character encoding declaration in HTML',
+      heading_path: ['Overview'],
+      language: 'en',
+      status: 'published',
+      translation_state: 'current',
+      text: 'Declare UTF-8 character encoding early in the document.'
+    },
+    {
+      chunk_id: 'articles/test-article/index.zh-hans.html#section',
+      source_path: 'articles/test-article/index.zh-hans.html',
+      translation_group_id: 'articles/test-article/index',
+      section_url: 'https://www.w3.org/International/articles/test-article/#section',
+      title: 'HTML 字符编码声明',
+      heading_path: ['概述'],
+      language: 'zh-hans',
+      status: 'obsolete',
+      translation_state: 'out_of_date',
+      text: '在文档开头声明字符编码。'
+    }
+  ];
+
+  const result = retrieve({
+    query: 'Declare UTF-8 character encoding',
+    language: 'zh-hans',
+    statuses: ['published'],
+    includeObsolete: false,
+    chunks: testChunks,
+    limit: 5
+  });
+
+  assert.equal(result.results.length, 1);
+  assert.equal(result.results[0].language, 'en');
+  assert.equal(result.results.some((item) => item.status === 'obsolete'), false);
+});

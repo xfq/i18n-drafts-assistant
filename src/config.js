@@ -37,7 +37,16 @@ export function getConfig(overrides = {}) {
 }
 
 function parseSources(overrides, env) {
-  const raw = firstDefined(overrides.sources, env.SOURCES, '');
+  const hasExplicitSingleSourceOverride =
+    overrides.sourceMode !== undefined ||
+    overrides.sourceRepoPath !== undefined ||
+    overrides.sourceRepoUrl !== undefined ||
+    overrides.sourceRef !== undefined;
+
+  const raw = overrides.sources !== undefined
+    ? overrides.sources
+    : (hasExplicitSingleSourceOverride ? '' : (env.SOURCES || ''));
+
   if (raw) {
     try {
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -48,6 +57,10 @@ function parseSources(overrides, env) {
       // fall through to legacy single-source
     }
   }
+
+  const requireMetadata = overrides.requireMetadata !== undefined
+    ? parseBoolean(overrides.requireMetadata)
+    : true;
 
   return [
     {
@@ -60,8 +73,9 @@ function parseSources(overrides, env) {
       repoPath: firstDefined(overrides.sourceRepoPath, env.SOURCE_REPO_PATH, ''),
       publicBaseUrl: firstDefined(overrides.publicBaseUrl, env.PUBLIC_BASE_URL, 'https://www.w3.org/International'),
       contentRoots: null,
-      requireMetadata: true,
-      statusOverride: ''
+      requireMetadata,
+      defaultStatus: overrides.defaultStatus || (requireMetadata ? '' : 'published'),
+      statusOverride: overrides.statusOverride || ''
     }
   ];
 }

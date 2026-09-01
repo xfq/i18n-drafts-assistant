@@ -4,6 +4,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { getConfig, parseEnvFileContent } from '../src/config.js';
+import { parseArgs } from '../src/indexing/indexer.js';
 
 const touchedKeys = [
   'PORT',
@@ -165,6 +166,52 @@ test('getConfig falls back to legacy single-source on invalid SOURCES JSON', asy
 
     assert.equal(config.sources.length, 1);
     assert.equal(config.sources[0].id, 'i18n-drafts');
+  });
+});
+
+test('explicit single-source overrides take precedence over SOURCES in .env', async () => {
+  const sources = JSON.stringify([
+    {
+      id: 'i18n-drafts',
+      repoUrl: 'https://github.com/w3c/i18n-drafts.git',
+      ref: 'gh-pages'
+    },
+    {
+      id: 'bp-i18n-specdev',
+      repoUrl: 'https://github.com/w3c/bp-i18n-specdev.git',
+      ref: 'gh-pages'
+    }
+  ]);
+  const envFilePath = await writeTempEnv(`SOURCES=${sources}`);
+
+  await withCleanEnv(async () => {
+    const config = getConfig({
+      envFilePath,
+      sourceMode: 'local',
+      sourceRepoPath: 'tests/fixtures/i18n-mini'
+    });
+
+    assert.equal(config.sources.length, 1);
+    assert.equal(config.sources[0].id, 'i18n-drafts');
+    assert.equal(config.sources[0].mode, 'local');
+    assert.equal(config.sources[0].repoPath, 'tests/fixtures/i18n-mini');
+  });
+});
+
+test('parseArgs parses CLI flags with equals and space separators', () => {
+  const args = parseArgs([
+    '--source-mode=local',
+    '--source-repo-path',
+    'tests/fixtures/i18n-mini',
+    '--require-metadata=false',
+    '--enable-debug'
+  ]);
+
+  assert.deepEqual(args, {
+    sourceMode: 'local',
+    sourceRepoPath: 'tests/fixtures/i18n-mini',
+    requireMetadata: 'false',
+    enableDebug: 'true'
   });
 });
 
