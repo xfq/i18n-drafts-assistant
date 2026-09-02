@@ -277,6 +277,31 @@ textarea {
   font-size: 0.86rem;
 }
 
+.field-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.field-tools .hint {
+  flex: 1 1 22rem;
+}
+
+.voice-input {
+  min-block-size: 36px;
+  padding-block: 0.4rem;
+  padding-inline: 0.75rem;
+  font-size: 0.86rem;
+}
+
+.voice-input[aria-pressed='true'] {
+  border-color: var(--error-border);
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
 .shortcut-hint {
   display: inline-block;
   margin-inline-start: 0.25rem;

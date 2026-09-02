@@ -39,14 +39,17 @@
           <div class="field">
             <label for="question" data-i18n="questionLabel">Question</label>
             <textarea id="question" name="question" rows="5" minlength="3" required enterkeyhint="send" aria-describedby="question-help">How should I declare UTF-8 character encoding in HTML?</textarea>
-            <p id="question-help" class="hint">
-              <span data-i18n="questionHelp">Answers are grounded only in indexed W3C Internationalization sources.</span>
-              <span class="shortcut-hint">
-                <span data-i18n="shortcutHintBefore"></span>
-                <span dir="ltr" class="shortcut-keys"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd></span>
-                <span data-i18n="shortcutHintAfter"> to ask.</span>
-              </span>
-            </p>
+            <div class="field-tools">
+              <p id="question-help" class="hint">
+                <span data-i18n="questionHelp">Answers are grounded only in indexed W3C Internationalization sources.</span>
+                <span class="shortcut-hint">
+                  <span data-i18n="shortcutHintBefore"></span>
+                  <span dir="ltr" class="shortcut-keys"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd></span>
+                  <span data-i18n="shortcutHintAfter"> to ask.</span>
+                </span>
+              </p>
+              <button id="voice-input" class="voice-input" type="button" data-i18n="voiceInputStart" aria-pressed="false" hidden>Voice input</button>
+            </div>
           </div>
 
           <div class="control-grid">

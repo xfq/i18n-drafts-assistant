@@ -1,5 +1,5 @@
 import { highlightCode } from './syntax-highlight.js';
-import { MESSAGES, applyUILanguage, detectUILanguage, getUILanguage, t } from './i18n.js';
+import { MESSAGES, applyUILanguage, detectUILanguage, getUILanguage, onUILanguageChange, t } from './i18n.js';
 
 const form = typeof document === 'undefined' ? null : document.querySelector('#ask-form');
 const questionField = form?.elements.namedItem('question') || null;
@@ -12,15 +12,22 @@ const answerEl = typeof document === 'undefined' ? null : document.querySelector
 const citationsEl = typeof document === 'undefined' ? null : document.querySelector('#citations');
 const healthStatus = typeof document === 'undefined' ? null : document.querySelector('#health-status');
 const previewNotice = typeof document === 'undefined' ? null : document.querySelector('#preview-notice');
+const voiceButton = typeof document === 'undefined' ? null : document.querySelector('#voice-input');
 
 let lastHealth = null;
 let lastResponse = null;
 let lastPayload = null;
 let answerLanguageTouched = false;
+let voiceRecognition = null;
 
 const DEFAULT_ANSWER_LANGUAGE = {
   en: 'en',
   'zh-hans': 'zh-hans'
+};
+
+const SPEECH_RECOGNITION_LANGUAGES = {
+  en: 'en-US',
+  'zh-hans': 'zh-CN'
 };
 
 export function defaultAnswerLanguageForUI(uiLanguage) {
@@ -54,6 +61,7 @@ if (form) {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
+    stopVoiceInput();
     validateQuestion();
     if (!form.reportValidity()) {
       setMessage(questionField.validationMessage, 'error');
@@ -74,14 +82,14 @@ if (form) {
     form.requestSubmit(submitButton);
   });
 
+  initVoiceInput();
   loadHealth();
 }
 
 function updateQuestionSample() {
   if (!questionField) return;
   const sample = t('sampleQuestion');
-  const isSample = Object.values(MESSAGES)
-    .some((messages) => messages.sampleQuestion === questionField.value);
+  const isSample = isSampleQuestion(questionField.value);
   if (isSample && questionField.value !== sample) {
     questionField.value = sample;
   }
@@ -99,6 +107,108 @@ export function isSendShortcut(event) {
 function validateQuestion() {
   const question = questionField.value.trim();
   questionField.setCustomValidity(question.length >= 3 ? '' : t('validationMinLength'));
+}
+
+export function speechRecognitionLanguage(uiLanguage) {
+  return SPEECH_RECOGNITION_LANGUAGES[uiLanguage] ?? 'en-US';
+}
+
+function isSampleQuestion(value) {
+  return Object.values(MESSAGES)
+    .some((messages) => messages.sampleQuestion === value);
+}
+
+function initVoiceInput() {
+  if (!voiceButton) return;
+  const SpeechRecognitionImpl = typeof window === 'undefined'
+    ? null
+    : window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognitionImpl) return;
+
+  voiceButton.hidden = false;
+  onUILanguageChange(() => renderVoiceInputButton());
+  window.addEventListener('pagehide', stopVoiceInput);
+
+  voiceButton.addEventListener('click', () => {
+    if (voiceRecognition) {
+      stopVoiceInput();
+      questionField?.focus();
+      return;
+    }
+    startVoiceInput(SpeechRecognitionImpl);
+  });
+}
+
+function startVoiceInput(SpeechRecognitionImpl) {
+  if (!questionField || !voiceButton || voiceRecognition) return;
+  if (messageArea.classList.contains('error')) setMessage('', '');
+
+  if (isSampleQuestion(questionField.value) || !questionField.value.trim()) {
+    questionField.value = '';
+  }
+  const prefix = questionField.value;
+  let finalTranscript = '';
+
+  const recognition = new SpeechRecognitionImpl();
+  voiceRecognition = recognition;
+  recognition.lang = speechRecognitionLanguage(getUILanguage());
+  recognition.continuous = false;
+  recognition.interimResults = true;
+
+  recognition.onresult = (event) => {
+    let interimTranscript = '';
+    for (let index = event.resultIndex; index < event.results.length; index += 1) {
+      const result = event.results[index];
+      const transcript = result?.[0]?.transcript || '';
+      if (result.isFinal) finalTranscript += transcript;
+      else interimTranscript += transcript;
+    }
+    questionField.value = `${prefix}${finalTranscript}${interimTranscript}`;
+    questionField.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  recognition.onerror = (event) => {
+    if (event?.error === 'aborted') return;
+    setMessage(t('voiceInputError'), 'error');
+    resetVoiceRecognition();
+  };
+
+  recognition.onend = () => {
+    if (voiceRecognition === recognition) resetVoiceRecognition();
+  };
+
+  renderVoiceInputButton();
+  questionField.focus();
+  try {
+    recognition.start();
+  } catch {
+    setMessage(t('voiceInputError'), 'error');
+    resetVoiceRecognition();
+  }
+}
+
+function stopVoiceInput() {
+  if (!voiceRecognition) return;
+  voiceRecognition.onend = null;
+  voiceRecognition.onerror = null;
+  try {
+    voiceRecognition.abort();
+  } catch {
+    // The recognition session may already have ended.
+  }
+  resetVoiceRecognition();
+}
+
+function resetVoiceRecognition() {
+  voiceRecognition = null;
+  renderVoiceInputButton();
+}
+
+function renderVoiceInputButton() {
+  if (!voiceButton) return;
+  const active = Boolean(voiceRecognition);
+  voiceButton.setAttribute('aria-pressed', String(active));
+  voiceButton.textContent = t(active ? 'voiceInputStop' : 'voiceInputStart');
 }
 
 async function loadHealth() {

@@ -1,12 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { defaultAnswerLanguageForUI, isEnglishLanguage, isSendShortcut } from '../public/app.js';
+import { defaultAnswerLanguageForUI, isEnglishLanguage, isSendShortcut, speechRecognitionLanguage } from '../public/app.js';
 
 test('the default answer language follows the interface language', () => {
   assert.equal(defaultAnswerLanguageForUI('en'), 'en');
   assert.equal(defaultAnswerLanguageForUI('zh-hans'), 'zh-hans');
   assert.equal(defaultAnswerLanguageForUI('fr'), null);
+});
+
+test('speech recognition language follows the interface language', () => {
+  assert.equal(speechRecognitionLanguage('en'), 'en-US');
+  assert.equal(speechRecognitionLanguage('zh-hans'), 'zh-CN');
+  assert.equal(speechRecognitionLanguage('fr'), 'en-US');
+});
+
+test('public UI offers voice input for the question field', async () => {
+  const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+
+  assert.match(page, /<button id="voice-input"[^>]*type="button"[^>]*hidden>/);
+  assert.match(page, /aria-pressed="false"/);
+  assert.match(page, /data-i18n="voiceInputStart"/);
+});
+
+test('voice input hides itself when speech recognition is unsupported', async () => {
+  const app = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
+
+  assert.match(app, /window\.SpeechRecognition \|\| window\.webkitSpeechRecognition/);
+  assert.match(app, /onUILanguageChange\(\(\) => renderVoiceInputButton\(\)\)/);
 });
 
 test('public UI omits the retired retrieved-sources panel', async () => {
