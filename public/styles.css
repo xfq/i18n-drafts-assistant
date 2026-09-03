@@ -180,10 +180,32 @@ pre:focus-visible {
 }
 
 .header-link {
+  display: inline-flex;
   flex: 0 0 auto;
-  font-size: 0.9rem;
-  font-weight: 650;
-  text-decoration: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: background-color 170ms var(--ease-out);
+}
+
+.header-link img {
+  display: block;
+  inline-size: 32px;
+  block-size: auto;
+}
+
+.header-link:hover {
+  background: var(--accent-soft);
+}
+
+.app-header__icon-links {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.2rem;
 }
 
 .github-link {
@@ -813,6 +835,7 @@ button:disabled {
   textarea,
   select,
   .choice-group label,
+  .header-link,
   .github-link,
   .citation {
     transition: none;

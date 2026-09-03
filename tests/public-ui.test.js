@@ -59,11 +59,17 @@ test('public UI defaults the answer language to English', async () => {
   assert.match(defaultOption, /\bvalue="en"/);
 });
 
-test('public UI opens the W3C reference link in a new window', async () => {
-  const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+test('public UI links the W3C i18n icon to the W3C Internationalization site', async () => {
+  const [page, css] = await Promise.all([
+    readFile(new URL('../public/index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../public/styles.css', import.meta.url), 'utf8')
+  ]);
 
-  assert.match(page, /<a class="header-link"[^>]*href="https:\/\/www\.w3\.org\/International\/"[^>]*target="_blank"/);
-  assert.match(page, /<a class="header-link"[^>]*data-i18n="headerLink"/);
+  assert.match(page, /<a\s+class="header-link"[^>]*href="https:\/\/www\.w3\.org\/International\/"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/s);
+  assert.match(page, /data-i18n-aria-label="headerLink"[^>]*aria-label="W3C i18n"/s);
+  assert.match(page, /<img\s+src="https:\/\/www\.w3\.org\/assets\/logos\/w3c-2025\/png\/w3c\.png"[^>]*alt=""[^>]*width="120"[^>]*height="120"/s);
+  assert.match(page, /<div class="app-header__icon-links">[\s\S]*class="header-link"[\s\S]*class="github-link"[\s\S]*<\/div>/);
+  assert.match(css, /\.app-header__icon-links\s*{[^}]*gap:\s*0\.2rem;/s);
 });
 
 test('public UI links its GitHub icon to the project repository', async () => {
