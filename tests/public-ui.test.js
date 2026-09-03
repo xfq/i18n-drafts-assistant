@@ -66,6 +66,14 @@ test('public UI opens the W3C reference link in a new window', async () => {
   assert.match(page, /<a class="header-link"[^>]*data-i18n="headerLink"/);
 });
 
+test('public UI links its GitHub icon to the project repository', async () => {
+  const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+
+  assert.match(page, /<a\s+class="github-link"[^>]*href="https:\/\/github\.com\/xfq\/i18n-drafts-assistant"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/s);
+  assert.match(page, /data-i18n-aria-label="githubLinkLabel"[^>]*aria-label="View project on GitHub"/s);
+  assert.match(page, /<svg aria-hidden="true"[^>]*>[\s\S]*?<path fill="currentColor"/);
+});
+
 test('citation source links open in a new window', async () => {
   const app = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
 

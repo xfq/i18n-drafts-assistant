@@ -186,6 +186,23 @@ pre:focus-visible {
   text-decoration: none;
 }
 
+.github-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: 6px;
+  color: var(--text);
+  transition: background-color 170ms var(--ease-out), color 170ms var(--ease-out);
+}
+
+.github-link:hover {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
 .app-header__actions {
   display: flex;
   align-items: center;
@@ -796,6 +813,7 @@ button:disabled {
   textarea,
   select,
   .choice-group label,
+  .github-link,
   .citation {
     transition: none;
   }
